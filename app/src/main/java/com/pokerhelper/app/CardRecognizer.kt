@@ -1020,7 +1020,7 @@ class CardRecognizer(private val context: Context) {
             else { suit = "c"; symbol = "\u2663"; conf = 0.66f }
         }
 
-        Log.d(TAG, "suit: ${suit}${symbol} widest@${String.format("%.0f", widestPos*100)}% comY=${String.format("%.2f", comY)} topXStd=${String.format("%.1f", topXStd)} compCount=$compCount conf=${String.format("%.2f", conf)}")
+        Log.d(TAG, "suit: ${suit}${symbol} widest@${String.format("%.0f", widestPos*100)}% comY=${String.format("%.2f", comY)} compCount=$compCount conf=${String.format("%.2f", conf)}")
         return Triple(suit, symbol, conf)
     }
 
