@@ -11,3 +11,13 @@ build/
 
 # Ignore local config
 local.properties
+
+# Anti-detection: never commit sensitive files
+.local/
+*.log
+error_logs.txt
+
+# Generated
+*.apk
+*.ap_
+*.aab
