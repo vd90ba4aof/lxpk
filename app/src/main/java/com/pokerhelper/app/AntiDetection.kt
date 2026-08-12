@@ -34,7 +34,11 @@ object AntiDetection {
         // 使用正偏态分布 (人类通常不会100ms就反应)
         val base = 800.0
         val sigma = 400.0
-        val delay = (Random.nextGaussian() * sigma + base).toLong()
+        // Kotlin Random 没有nextGaussian, 用Box-Muller变换
+        val u1 = Random.nextDouble(0.0001, 1.0)
+        val u2 = Random.nextDouble()
+        val gaussian = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
+        val delay = (gaussian * sigma + base).toLong()
         return delay.coerceIn(300, 3000)
     }
     
