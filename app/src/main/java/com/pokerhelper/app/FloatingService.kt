@@ -120,7 +120,7 @@ class FloatingService : Service() {
     private var cachedActivePlayers: Int = 3
     private var cachedMyPosition: String = "BTN"
     private var cachedPlayerChips: Int = 0
-    private val FAST_PATH_MIN_CONFIDENCE = 0.85f
+    private val FAST_PATH_MIN_CONFIDENCE = 0.80f
     private var screenWidth = 1080
     private var screenHeight = 2344
     private var isVisionInProgress = false

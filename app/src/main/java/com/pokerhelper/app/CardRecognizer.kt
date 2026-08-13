@@ -470,12 +470,19 @@ class CardRecognizer(private val context: Context) {
 
         Log.d(TAG, "V3识别: ${if(isHand)"手牌" else "公共牌"}[$index] $rankDisplay$suitSym rank=$source conf=$finalConfidence suitConf=$suitConf")
 
+        // V3.7: 组合置信度 — suit可靠(0.88-0.92)时拉高整体置信，解锁快速通道
+        val combinedConf = if (suit != "?") {
+            Math.max(finalConfidence, suitConf).toFloat()
+        } else {
+            finalConfidence
+        }
+
         return IdentifiedCard(
             rank = rankDisplay,
             suit = suit,
             suitSymbol = suitSym,
             fullKey = fullKey,
-            confidence = finalConfidence,
+            confidence = combinedConf,
             position = -1
         )
     }
@@ -1005,8 +1012,8 @@ class CardRecognizer(private val context: Context) {
             if (comY > 0.40 && comY < 0.62) diamondScore += 1.5
             val symRatio = if (totalPx > 0) kotlin.math.abs(topSum - botSum).toDouble() / totalPx else 1.0
             if (symRatio < 0.35) diamondScore += 1.0
-            if (diamondScore > 3.5) { suit = "d"; symbol = "\u2666"; conf = 0.90f }
-            else { suit = "h"; symbol = "\u2665"; conf = 0.66f }
+            if (diamondScore > 3.5) { suit = "d"; symbol = "\u2666"; conf = 0.92f }
+            else { suit = "h"; symbol = "\u2665"; conf = 0.88f }
         } else {
             // === V3.6: ♣/♠ 融合六特征 ===
             var clubScore = 0.0
@@ -1056,8 +1063,8 @@ class CardRecognizer(private val context: Context) {
 
             // 综合判定: 不像♣就判♠
             val clubConfidence = clubScore - spadeScore
-            if (clubConfidence >= 0.0) { suit = "c"; symbol = "\u2663"; conf = 0.66f }
-            else { suit = "s"; symbol = "\u2660"; conf = 0.90f }
+            if (clubConfidence >= 0.0) { suit = "c"; symbol = "\u2663"; conf = 0.88f }
+            else { suit = "s"; symbol = "\u2660"; conf = 0.92f }
         }
 
         Log.d(TAG, "suit: ${suit}${symbol} widest@${String.format("%.0f", widestPos*100)}% comY=${String.format("%.2f", comY)} compCount=$compCount conf=${String.format("%.2f", conf)}")
