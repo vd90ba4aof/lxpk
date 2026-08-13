@@ -82,8 +82,21 @@ object ChipTracker {
     fun analyzeWithFixedCoords(bitmap: Bitmap): FrameData? {
         try {
             val config = GameModeConfig.getCoordinateConfig()
-            val chipRegions = config.playerChips
-            val nameRegions = config.playerNames
+            // V3.8: 坐标缩放 — 基准1080×2344 → 实际屏幕尺寸
+            val scaleX = bitmap.width.toFloat() / config.referenceWidth
+            val scaleY = bitmap.height.toFloat() / config.referenceHeight
+            val chipRegions = config.playerChips.map { r ->
+                intArrayOf(
+                    (r[0] * scaleX).toInt(), (r[1] * scaleY).toInt(),
+                    (r[2] * scaleX).toInt(), (r[3] * scaleY).toInt()
+                )
+            }
+            val nameRegions = config.playerNames.map { r ->
+                intArrayOf(
+                    (r[0] * scaleX).toInt(), (r[1] * scaleY).toInt(),
+                    (r[2] * scaleX).toInt(), (r[3] * scaleY).toInt()
+                )
+            }
             
             if (chipRegions.isEmpty()) {
                 Log.w(TAG, "固定坐标未配置，fallback到全屏OCR")
@@ -172,7 +185,12 @@ object ChipTracker {
             
             // OCR底池金额
             val potAmount = try {
-                val potRegion = config.potAmount
+                val potRegionRaw = config.potAmount
+                // V3.8: 底池坐标缩放
+                val potRegion = intArrayOf(
+                    (potRegionRaw[0] * scaleX).toInt(), (potRegionRaw[1] * scaleY).toInt(),
+                    (potRegionRaw[2] * scaleX).toInt(), (potRegionRaw[3] * scaleY).toInt()
+                )
                 val potBitmap = Bitmap.createBitmap(bitmap,
                     potRegion[0].coerceIn(0, bitmap.width - 1),
                     potRegion[1].coerceIn(0, bitmap.height - 1),
@@ -188,7 +206,13 @@ object ChipTracker {
             
             // D按钮检测（返回0-based索引，转为1-6座位号）
             val dealerSeatIndex = try {
-                val searchAreas = config.dealerSearchAreas
+                // V3.8: D按钮搜索区域缩放
+                val searchAreas = config.dealerSearchAreas.map { r ->
+                    intArrayOf(
+                        (r[0] * scaleX).toInt(), (r[1] * scaleY).toInt(),
+                        (r[2] * scaleX).toInt(), (r[3] * scaleY).toInt()
+                    )
+                }
                 if (searchAreas.isNotEmpty()) {
                     val idx0 = CardRecognizer.detectDealerButton(bitmap, searchAreas)
                     if (idx0 >= 0) idx0 + 1 else -1
