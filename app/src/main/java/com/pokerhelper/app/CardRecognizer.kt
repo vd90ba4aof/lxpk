@@ -574,7 +574,7 @@ class CardRecognizer(private val context: Context) {
                     latch.countDown()
                 }
 
-            latch.await(500, TimeUnit.MILLISECONDS) // 500ms超时
+            latch.await(200, TimeUnit.MILLISECONDS) // V3.10: 200ms超时(主线程保护,防ANR)
             recognizer.close()
             bmp.recycle()
 
@@ -1208,7 +1208,7 @@ class CardRecognizer(private val context: Context) {
                     Log.e(TAG, "readPotSize OCR失败: ${e.message}")
                     latch.countDown()
                 }
-            latch.await(2, TimeUnit.SECONDS)
+            latch.await(800, TimeUnit.MILLISECONDS) // V3.10: 800ms超时(主线程保护)
             recognizer.close()
         } catch (e: Exception) {
             Log.e(TAG, "readPotSize异常", e)
@@ -1258,7 +1258,7 @@ class CardRecognizer(private val context: Context) {
                 recognizer.process(image)
                     .addOnSuccessListener { ocrText = it.text.trim(); latch.countDown() }
                     .addOnFailureListener { latch.countDown() }
-                latch.await(600, TimeUnit.MILLISECONDS)
+                latch.await(300, TimeUnit.MILLISECONDS) // V3.10: 300ms超时(主线程保护)
                 recognizer.close()
             } catch (e: Exception) {
             } finally {

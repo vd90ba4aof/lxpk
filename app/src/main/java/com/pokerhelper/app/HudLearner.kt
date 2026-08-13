@@ -93,6 +93,7 @@ object HudLearner {
         giteeToken = token
     }
 
+    @Synchronized
     fun recordHand(opponentStats: Map<String, Float>, level: String) {
         val p = prefs ?: return
         currentLevel = level
@@ -132,6 +133,7 @@ object HudLearner {
      * @param potSize 底池大小(筹码单位)
      * @param level 级别
      */
+    @Synchronized
     fun recordResult(won: Boolean, potSize: Int, level: String) {
         val p = prefs ?: return
         try {

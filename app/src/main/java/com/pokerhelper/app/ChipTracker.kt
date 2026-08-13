@@ -139,7 +139,11 @@ object ChipTracker {
                             (nr[2] - nr[0]).coerceIn(1, bitmap.width - nr[0]),
                             (nr[3] - nr[1]).coerceIn(1, bitmap.height - nr[1]))
                     } catch (e: Exception) { null }
-                    if (nameBitmap != null) ocrRegionText(nameBitmap) else ""
+                    // V3.10: 修复内存泄漏 — nameBitmap必须recycle
+                    val nameText = if (nameBitmap != null) {
+                        try { ocrRegionText(nameBitmap) } finally { nameBitmap.recycle() }
+                    } else ""
+                    nameText
                 } else ""
                 
                 // 判断座位状态
