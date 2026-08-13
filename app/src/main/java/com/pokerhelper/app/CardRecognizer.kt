@@ -991,9 +991,9 @@ class CardRecognizer(private val context: Context) {
         val topEdgeMax = rowWidths.take(topEdgeEnd).maxOrNull() ?: 0
         val botEdgeMax = if (botEdgeStart < regH) rowWidths.drop(botEdgeStart).maxOrNull() ?: 0 else 0
 
-        // V3.4: 二选一排除法 — 只需锚定一种花色 (已验证 4/4=100%)
+        // V3.6: 二选一排除法融合双仓库优势
         // RED: 计算diamond分数, 高→♦, 低→♥ (排除法)
-        // BLACK: 计算spade分数, 高→♠, 低→♣ (排除法)
+        // BLACK: 融合V3.5六特征(maxW/shrinkRatio/lastRowRatio/botTopThird)与V3.4四特征
         val suit: String
         val symbol: String
         var conf: Float
@@ -1008,16 +1008,56 @@ class CardRecognizer(private val context: Context) {
             if (diamondScore > 3.5) { suit = "d"; symbol = "\u2666"; conf = 0.90f }
             else { suit = "h"; symbol = "\u2665"; conf = 0.66f }
         } else {
+            // === V3.6: ♣/♠ 融合六特征 ===
+            var clubScore = 0.0
             var spadeScore = 0.0
             val topXStd = computeTopXStd(mask, regW, regH)
-            // ♠ 特征: 顶部x分散 + 底部重 + 碎片多
-            if (topXStd > 14f) spadeScore += 4.0
-            else if (topXStd > 10f) spadeScore += 2.0
+
+            // 特征1: 最大行宽（V3.5） — 完整♣三瓣展开更宽
+            val maxW = rowWidths.max()
+            if (maxW >= 77) clubScore += 3.0
+            else if (maxW >= 75) clubScore += 1.0
+
+            // 特征2: 顶部x标准差（V3.5） — ♣三瓣展开 topXStd≥12
+            if (topXStd >= 12f) clubScore += 3.0
+            else if (topXStd >= 10f) clubScore += 1.5
+            else if (topXStd <= 8.5f) spadeScore += 1.0
+
+            // 特征3: 底部收缩率（V3.5新增） — ♣底部有尖<0.20, ♠平滑>0.35
+            val shrinkN = minOf(5, regH)
+            var lastNSum = 0
+            for (y in regH - shrinkN until regH) lastNSum += rowWidths[y]
+            val shrinkRatio = if (maxW > 0) lastNSum.toDouble() / shrinkN / maxW else 0.0
+            if (shrinkRatio < 0.20) clubScore += 2.5
+            else if (shrinkRatio < 0.25) clubScore += 1.5
+            else if (shrinkRatio > 0.35) spadeScore += 1.0
+
+            // 特征4: 最后一行宽度比（V3.5新增） — ♣底部尖更细
+            val lastRowRatio = if (maxW > 0) rowWidths[regH - 1].toDouble() / maxW else 0.0
+            if (lastRowRatio < 0.20) clubScore += 2.0
+            else if (lastRowRatio < 0.25) clubScore += 1.0
+
+            // 特征5: 下/上1/3像素比（V3.5新增） — 完整♣比值更大
+            val third = maxOf(1, regH / 3)
+            var topThirdPx = 0; var botThirdPx = 0
+            for (y in 0 until third) topThirdPx += rowWidths[y]
+            for (y in regH - third until regH) botThirdPx += rowWidths[y]
+            val botTopThirdRatio = if (topThirdPx > 0) botThirdPx.toDouble() / topThirdPx else 0.0
+            if (botTopThirdRatio > 3.0) clubScore += 1.5
+
+            // 特征6: wp位置（V3.5） — 完整♣的wp更靠下
+            if (widestPos > 0.75) clubScore += 0.5
+            else if (widestPos > 0.70) clubScore += 0.3
+
+            // 特征7: V3.4保留 — 底部重(♠)与碎片(♠)
             if (widestPos > 0.65) spadeScore += 2.0
             if (botSum > topSum) spadeScore += 1.0
             if (compCount > 6) spadeScore += 1.5
-            if (spadeScore > 3.5) { suit = "s"; symbol = "\u2660"; conf = 0.90f }
-            else { suit = "c"; symbol = "\u2663"; conf = 0.66f }
+
+            // 综合判定: 不像♣就判♠
+            val clubConfidence = clubScore - spadeScore
+            if (clubConfidence >= 0.0) { suit = "c"; symbol = "\u2663"; conf = 0.66f }
+            else { suit = "s"; symbol = "\u2660"; conf = 0.90f }
         }
 
         Log.d(TAG, "suit: ${suit}${symbol} widest@${String.format("%.0f", widestPos*100)}% comY=${String.format("%.2f", comY)} compCount=$compCount conf=${String.format("%.2f", conf)}")
