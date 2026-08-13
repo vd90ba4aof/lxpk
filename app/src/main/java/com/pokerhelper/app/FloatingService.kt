@@ -2231,6 +2231,25 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                     handler.postDelayed(timeoutRunnable, 8000)
                     handler.post {
                         val taggedJson=if(frameTag.isNotEmpty()) resultJson.dropLast(1)+frameTag+"}" else resultJson
+                        // V3.1: HudLearner桥接 — 把自积累记忆注入JS的applyHudData
+                        try {
+                            val level = when {
+                                result.blindBB <= 10 -> "micro_nl2"
+                                result.blindBB <= 25 -> "low_nl10"
+                                else -> "mid_nl50"
+                            }
+                            val profile = HudLearner.getOpponentProfile(level)
+                            if (profile.totalHandsObserved >= 200 && profile.type == "self") {
+                                // 用自积累数据驱动对手画像（座位1-6循环填充）
+                                val hudJson = "[" + (1..6).joinToString(",") { s ->
+                                    "{seat:$s,vpip:${profile.vpip},pfr:${profile.pfr},threeBet:${profile.threeBet}}"
+                                } + "]"
+                                executeJs("if(typeof PostValidation!=='undefined')PostValidation.applyHudData($hudJson);")
+                                Log.d(TAG, "★ HudLearner桥接: ${profile.totalHandsObserved}手记忆注入策略引擎 (VPIP=${String.format("%.1f", profile.vpip*100)}%)")
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "HudLearner桥接失败", e)
+                        }
                         // V2.9.113: 先检测WebView是否就绪，再调onVisionResult
                         executeJs("(function(){try{if(typeof onVisionResult==='function'){onVisionResult($taggedJson);if(typeof AndroidBridge!=='undefined'&&AndroidBridge.confirmVisionReceived){AndroidBridge.confirmVisionReceived()}}else{console.log('[V2.9.125] onVisionResult不存在,尝试重载HTML');if(typeof AndroidBridge!=='undefined'&&AndroidBridge.showAdvice){AndroidBridge.showAdvice('COLOR:FOLD|SIGNAL:ERROR|REASON:策略引擎未加载');}setTimeout(function(){location.reload();},1000);}}catch(e){console.log('[V2.9.125] onVisionResult异常:'+e.message);if(typeof AndroidBridge!=='undefined'&&AndroidBridge.showAdvice){AndroidBridge.showAdvice('COLOR:FOLD|SIGNAL:ERROR|REASON:JS异常:'+e.message.substring(0,30));}}})()")
                         tvAction?.alpha = 1.0f
