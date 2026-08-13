@@ -1233,6 +1233,59 @@ class CardRecognizer(private val context: Context) {
         return numbers.maxOrNull() ?: -1
     }
 
+    /**
+     * V3.7: 读按钮上的跟注金额 — 本地OCR，纯本地模式补全toCall
+     * GG扑克按钮: 中间按钮显示 "Call 50" / "Check" / "All In"
+     * @return 跟注金额，0=check，-2=全下，-1=识别失败
+     */
+    fun readToCallFromButtons(screenshot: Bitmap, regions: List<IntArray>): Int {
+        for (region in regions) {
+            if (region.size < 4) continue
+            val x1 = region[0].coerceIn(0, screenshot.width - 1)
+            val y1 = region[1].coerceIn(0, screenshot.height - 1)
+            val x2 = region[2].coerceIn(x1 + 1, screenshot.width)
+            val y2 = region[3].coerceIn(y1 + 1, screenshot.height)
+            
+            val regionBmp = try {
+                Bitmap.createBitmap(screenshot, x1, y1, x2 - x1, y2 - y1)
+            } catch (e: Exception) { continue }
+            
+            val latch = CountDownLatch(1)
+            var ocrText = ""
+            try {
+                val image = InputImage.fromBitmap(regionBmp, 0)
+                val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                recognizer.process(image)
+                    .addOnSuccessListener { ocrText = it.text.trim(); latch.countDown() }
+                    .addOnFailureListener { latch.countDown() }
+                latch.await(600, TimeUnit.MILLISECONDS)
+                recognizer.close()
+            } catch (e: Exception) {
+            } finally {
+                regionBmp.recycle()
+            }
+            
+            if (ocrText.isEmpty()) continue
+            
+            val lower = ocrText.lowercase()
+            if (lower.contains("check") || lower.contains("过牌") || lower.contains("让牌")) {
+                Log.d(TAG, "按钮OCR: Check → toCall=0")
+                return 0
+            }
+            if (lower.contains("all") && (lower.contains("in") || lower.contains("全"))) {
+                Log.d(TAG, "按钮OCR: All In → toCall=-2")
+                return -2
+            }
+            val numbers = Regex("\\d+").findAll(ocrText.replace(",", "")).map { it.value.toIntOrNull() ?: 0 }.filter { it > 0 }.toList()
+            if (numbers.isNotEmpty()) {
+                val toCall = numbers.minOrNull() ?: numbers[0]
+                Log.d(TAG, "按钮OCR: \"$ocrText\" → toCall=$toCall")
+                return toCall
+            }
+        }
+        return -1
+    }
+
     // ============ 按钮状态推断 ============
 
     fun inferButtons(toCall: Int, isGG: Boolean = true): List<String> {

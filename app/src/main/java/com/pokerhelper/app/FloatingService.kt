@@ -1986,6 +1986,24 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                         0 -> "preflop"; 3 -> "flop"; 4 -> "turn"; 5 -> "river"; else -> "preflop"
                     }
 
+                    // V3.7: 本地OCR读按钮金额 — 补全toCall (纯本地模式)
+                    val fastBmpForButtons = android.graphics.BitmapFactory.decodeByteArray(screenshot, 0, screenshot.size)
+                    if (fastBmpForButtons != null) {
+                        try {
+                            val actionRegions = GameModeConfig.getActionButtons()
+                            if (actionRegions.isNotEmpty()) {
+                                val localToCall = cardRecognizer!!.readToCallFromButtons(fastBmpForButtons, actionRegions)
+                                if (localToCall >= 0) {
+                                    cachedToCall = localToCall  // 0=check, >0=金额
+                                    Log.d(TAG, "★ 本地按钮OCR: toCall=$cachedToCall")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "按钮OCR失败", e)
+                        }
+                        fastBmpForButtons.recycle()
+                    }
+
                     // V2.9.208 Phase 3: 按钮状态推断 + 缓存按钮坐标
                     val fastButtons = if (latestButtonPositions.isNotEmpty()) {
                         latestButtonPositions.map { it.text }
