@@ -190,6 +190,7 @@ class FloatingService : Service() {
     // V2.9.173: BLE诊断信息独立显示区，不被tap结果覆盖
     private var tvBleStatus: TextView? = null
     private var bleStatusPending = false  // V2.9.184: 用标志位替代字符串比较
+    private var bleErrorCount = 0  // V3.9: ESP32连续失败计数
 
     // V2.9.38: 隐身模式通知广播接收器
     private val notificationReceiver = object : BroadcastReceiver() {
@@ -415,7 +416,27 @@ class FloatingService : Service() {
         bleManager?.onCommandResult = { result ->
             handler.post {
                 bleStatusPending = false  // V2.9.184: 收到响应，取消超时
-                if (result.startsWith("ok:") || result.startsWith("查询ESP32")) {
+                // V3.9: ESP32断线检测 — 点击静默失败保护
+                if (result.startsWith("err:not_connected") || result.startsWith("err:no_tx")) {
+                    Log.e(TAG, "★ ESP32断线! 点击失败: $result — 尝试重连")
+                    bleErrorCount++
+                    updateAdviceNotification("⚠️ ESP32断线", "第${bleErrorCount}次失败，尝试重连...")
+                    updateBallAdvice("COLOR:FOLD|SIGNAL:COUNTER|REASON:ESP32断线")
+                    if (bleErrorCount >= 3) {
+                        // 连续3次失败 → 暂停自动模式，避免瞎等Shot Clock
+                        Log.e(TAG, "★ ESP32连续${bleErrorCount}次失败，暂停自动执行")
+                        stopAutoCapture()
+                        updateAdviceNotification("❌ ESP32已断开", "自动模式已暂停，请检查硬件连接后重新启动")
+                        updateBallAdvice("COLOR:FOLD|SIGNAL:ERROR|REASON:ESP32断开")
+                    } else {
+                        // 尝试重连
+                        try { bleManager?.startScan() } catch (e: Exception) {
+                            Log.w(TAG, "重连失败", e)
+                        }
+                    }
+                    return@post
+                } else if (result.startsWith("ok:") || result.startsWith("查询ESP32")) {
+                    bleErrorCount = 0  // 正常通信，重置错误计数
                     val formattedResult = if (result.startsWith("ok:")) {
                         val fields = result.removePrefix("ok:")
                         "ESP32状态:\n" + fields.split(",").joinToString("\n") { "  $it" }
@@ -2005,7 +2026,7 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                     val fastBmpForButtons = android.graphics.BitmapFactory.decodeByteArray(screenshot, 0, screenshot.size)
                     if (fastBmpForButtons != null) {
                         try {
-                            val actionRegions = GameModeConfig.getActionButtons()
+                            val actionRegions = GameModeConfig.getActionButtons(screenWidth, screenHeight)
                             if (actionRegions.isNotEmpty()) {
                                 val localToCall = cardRecognizer!!.readToCallFromButtons(fastBmpForButtons, actionRegions)
                                 if (localToCall >= 0) {

@@ -398,8 +398,17 @@ object GameModeConfig {
     /** 获取底池金额区域坐标 */
     fun getPotAmountRegion(): IntArray = getCoordinateConfig().potAmount
 
-    /** 获取底部操作按钮坐标 */
-    fun getActionButtons(): List<IntArray> = getCoordinateConfig().actionButtons
+    /** 获取底部操作按钮坐标（自动按屏幕缩放） */
+    fun getActionButtons(screenW: Int = 0, screenH: Int = 0): List<IntArray> {
+        val raw = getCoordinateConfig().actionButtons
+        if (screenW <= 0 || screenH <= 0) return raw
+        val cfg = getCoordinateConfig()
+        val sx = screenW.toFloat() / cfg.referenceWidth
+        val sy = screenH.toFloat() / cfg.referenceHeight
+        return raw.map { r ->
+            intArrayOf((r[0] * sx).toInt(), (r[1] * sy).toInt(), (r[2] * sx).toInt(), (r[3] * sy).toInt())
+        }
+    }
 
     /** 获取下注按钮坐标（4档） */
     fun getBetButtons(): List<IntArray> = getCoordinateConfig().betButtons
