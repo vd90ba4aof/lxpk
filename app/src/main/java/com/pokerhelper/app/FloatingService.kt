@@ -2241,6 +2241,21 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                     handler.postDelayed(timeoutRunnable, 8000)
                     handler.post {
                         val taggedJson=if(frameTag.isNotEmpty()) resultJson.dropLast(1)+frameTag+"}" else resultJson
+                        // V3.3: 摊牌结果检测 — 记录赢/输到HudLearner (EV闭环)
+                        try {
+                            if (result.showdownCards.isNotEmpty()) {
+                                val level = when {
+                                    result.blindBB <= 10 -> "micro_nl2"
+                                    result.blindBB <= 25 -> "low_nl10"
+                                    else -> "mid_nl50"
+                                }
+                                val heroWon = result.showdownCards.none { it.won }
+                                HudLearner.recordResult(heroWon, result.potSize, level)
+                                Log.d(TAG, "★ 摊牌记录: hero${if(heroWon) "赢" else "输"} 底池${result.potSize} (亮牌${result.showdownCards.size}个对手)")
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "摊牌结果记录失败", e)
+                        }
                         // V3.1: HudLearner桥接 — 把自积累记忆注入JS的applyHudData
                         try {
                             val level = when {
