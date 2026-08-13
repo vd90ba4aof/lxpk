@@ -2069,7 +2069,39 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                         handStartTime = 0; _shotClockRunnable?.let { handler.removeCallbacks(it) }
                         onAutoCaptureVisionDone(true)
                     }
-                    return  // 跳过VLM
+                    // V3.8: 后台静默VLM — 不阻塞本地决策，异步补充昵称/oppHud/摊牌
+                    if (VisionApiClient.apiKey.isNotEmpty()) {
+                        Thread {
+                            try {
+                                val bgResult = VisionApiClient.analyzeScreenshot(screenshot)
+                                if (bgResult != null && bgResult.isPokerTable) {
+                                    // 补充记忆: 真实HUD + 昵称
+                                    val level = when {
+                                        bgResult.blindBB <= 10 -> "micro_nl2"
+                                        bgResult.blindBB <= 25 -> "low_nl10"
+                                        else -> "mid_nl50"
+                                    }
+                                    val stats = mutableMapOf<String, Float>()
+                                    if (bgResult.oppHud.isNotEmpty()) {
+                                        val avgVpip = bgResult.oppHud.map { it.vpip }.filter { it > 0 }.average()
+                                        val avgPfr = bgResult.oppHud.map { it.pfr }.filter { it > 0 }.average()
+                                        if (avgVpip > 0) stats["vpip"] = (avgVpip / 100.0).toFloat()
+                                        if (avgPfr > 0) stats["pfr"] = (avgPfr / 100.0).toFloat()
+                                    }
+                                    if (stats.isNotEmpty()) HudLearner.recordHand(stats, level)
+                                    // 摊牌结果后台记录
+                                    if (bgResult.showdownCards.isNotEmpty()) {
+                                        val heroWon = bgResult.showdownCards.none { it.won }
+                                        HudLearner.recordResult(heroWon, bgResult.potSize, level)
+                                    }
+                                    Log.d(TAG, "★ 后台VLM补充: ${bgResult.oppHud.size}个HUD ${bgResult.showdownCards.size}个摊牌")
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "后台VLM补充失败", e)
+                            }
+                        }.start()
+                    }
+                    return  // 跳过VLM(前台)
                 }
             }
         }
