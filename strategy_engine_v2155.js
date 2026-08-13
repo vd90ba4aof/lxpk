@@ -421,10 +421,45 @@ function decidePostflop(k){
   var didPFR=ActionLine.didPreflopRaise();
   var weights=DRTA.getWeights?DRTA.getWeights(profile):{};
 
+  // ★ V3.1: StreetPlan多街计划 — 翻牌时生成计划，后续街检查
+  var _planAdvice='';
+  try{
+    if(typeof StreetPlan!=='undefined'){
+      if(street==='flop'&&didPFR&&scene==='check'){
+        var flopPlan=StreetPlan.makePlan(hole,bc,G.pos,didPFR);
+        if(flopPlan&&flopPlan.route)_planAdvice=' | 计划:'+flopPlan.route+(flopPlan.notes&&flopPlan.notes.length?('('+flopPlan.notes[0]+')'):'');
+      }else if(street==='turn'&&bc.length===4){
+        var newTurnCards=bc.slice(3,4);
+        var planCheck=StreetPlan.checkPlan('turn',newTurnCards,bc);
+        if(planCheck&&planCheck.adjustment)_planAdvice=' | 计划:'+planCheck.adjustment;
+      }
+    }
+  }catch(e){}
+
+  // ★ V3.1: RangeVsRange范围分析 — 翻牌时评估范围优势
+  var _rangeAdvice='';
+  try{
+    if(typeof RangeVsRange!=='undefined'&&bc.length>=3&&didPFR&&scene==='check'){
+      var myRangeName=G.pos==='btn'?'btn_open':'btn_open';
+      var rrEq=RangeVsRange.calcRangeEquity(
+        RangeVsRange.getRange(myRangeName),
+        RangeVsRange.getRange('bb_call'),
+        bc,
+        120 // 手机端限制迭代数
+      );
+      if(rrEq&&rrEq.myEquity!==undefined){
+        _rangeAdvice=' | 范围权益'+Math.round(rrEq.myEquity)+'%(坚果差'+rrEq.nutAdvantage+')';
+      }
+    }
+  }catch(e){}
+
   // ★ V3.0: River价值下注 (必须先检查，否则会被CBet/River诈唬覆盖)
   if(street==='river' && didPFR && scene==='check'){
     var rvResult = decideRiverValue(k, spr, eq, profile, bTexture, hClass);
-    if(rvResult) return rvResult;
+    if(rvResult){
+      if(_planAdvice||_rangeAdvice)rvResult.r=(rvResult.r||'')+_planAdvice+_rangeAdvice;
+      return rvResult;
+    }
   }
 
   // ★ V3.0: Turn防御 — OOP面对CBet
