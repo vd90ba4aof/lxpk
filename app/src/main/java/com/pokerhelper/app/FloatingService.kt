@@ -2123,10 +2123,10 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                             val avgPfr = result.oppHud.map { it.pfr }.filter { it > 0 }.average()
                             val avg3b = result.oppHud.map { it.threeBet }.filter { it > 0 }.average()
                             val avgAts = result.oppHud.map { it.ats }.filter { it > 0 }.average()
-                            if (avgVpip > 0) stats["vpip"] = (avgVpip / 100f)
-                            if (avgPfr > 0) stats["pfr"] = (avgPfr / 100f)
-                            if (avg3b > 0) stats["threeBet"] = (avg3b / 100f)
-                            if (avgAts > 0) stats["ats"] = (avgAts / 100f)
+                            if (avgVpip > 0) stats["vpip"] = (avgVpip / 100.0).toFloat()
+                            if (avgPfr > 0) stats["pfr"] = (avgPfr / 100.0).toFloat()
+                            if (avg3b > 0) stats["threeBet"] = (avg3b / 100.0).toFloat()
+                            if (avgAts > 0) stats["ats"] = (avgAts / 100.0).toFloat()
                             Log.d(TAG, "★ HUD真实数据: 平均VPIP=${String.format("%.0f", avgVpip)}% PFR=${String.format("%.0f", avgPfr)}% 3bet=${String.format("%.0f", avg3b)}% (${result.oppHud.size}个对手)")
                         }
                         // 无HUD数据时才用场景信号估计
