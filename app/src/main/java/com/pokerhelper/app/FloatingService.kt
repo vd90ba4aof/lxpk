@@ -259,6 +259,15 @@ class FloatingService : Service() {
         // V2.9.200: 初始化游戏模式配置（读取用户上次选择的平台）
         GameModeConfig.init(this)
 
+        // V3.0: 初始化HudLearner自积累记忆系统（本地模式，Token由MainActivity设置）
+        try {
+            val savedToken = prefs?.getString("gitee_hud_token", null)
+            HudLearner.init(this, savedToken)
+            Log.i(TAG, "HudLearner初始化完成")
+        } catch (e: Exception) {
+            Log.w(TAG, "HudLearner初始化失败", e)
+        }
+
         val notification = createNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -647,7 +656,10 @@ class FloatingService : Service() {
     private fun scheduleNextAutoCapture() {
         if(!autoCaptureEnabled)return; autoCaptureRunnable?.let{handler.removeCallbacks(it)}
         val r=Runnable{if(!autoCaptureEnabled)return@Runnable;if(isVisionInProgress){scheduleNextAutoCapture();return@Runnable};val pm=getSystemService(Context.POWER_SERVICE)as PowerManager;if(!pm.isScreenOn){scheduleNextAutoCapture();return@Runnable};autoCaptureTrigger()}
-        autoCaptureRunnable=r; handler.postDelayed(r,autoCaptureInterval)
+        autoCaptureRunnable=r
+        // V3.0: AntiDetection截屏间隔抖动（±15%随机+深夜降速50%）
+        val jittered = try { AntiDetection.getSuggestedInterval(autoCaptureInterval) } catch (e: Exception) { autoCaptureInterval }
+        handler.postDelayed(r,jittered)
     }
     private fun autoCaptureTrigger() {
         if(!ScreenOptService.isServiceRunning()){autoConsecutiveErrors++;checkAutoErrors();scheduleNextAutoCapture();return}
@@ -2095,6 +2107,32 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                 _diagLocalHandCards = emptyList()
                 _diagLocalCommunityCards = emptyList()
                 _diagLocalStreet = null
+                
+                if (result != null && result.isPokerTable && result.holeCards.size >= 2) {
+                    // V3.0: HudLearner记录对手数据 — 越打越聪明
+                    try {
+                        val level = when {
+                            result.blindBB <= 10 -> "micro_nl2"
+                            result.blindBB <= 25 -> "low_nl10"
+                            else -> "mid_nl50"
+                        }
+                        val stats = mutableMapOf<String, Float>()
+                        // 参与率估算: 有加注说明对手有侵略性
+                        if (result.toCall > 0) stats["pfr"] = 0.22f
+                        if (result.totalPlayers > 1) {
+                            stats["vpip"] = (result.activePlayers - 1).toFloat() / (result.totalPlayers - 1)
+                        }
+                        // 底池下注信号 → CBet倾向
+                        if (result.potSize > 0) {
+                            stats["cbetFlop"] = 0.55f  // 基线估计
+                        }
+                        if (stats.isNotEmpty()) {
+                            HudLearner.recordHand(stats, level)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "HudLearner记录失败", e)
+                    }
+                }
                 
                 if (result != null) {
                     // V2.9.111: NO_TABLE检测——优先看isPokerTable，其次3信号联合判断
