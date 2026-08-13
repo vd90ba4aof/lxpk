@@ -2109,7 +2109,7 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                 _diagLocalStreet = null
                 
                 if (result != null && result.isPokerTable && result.holeCards.size >= 2) {
-                    // V3.0: HudLearner记录对手数据 — 越打越聪明
+                    // V3.2: HudLearner记录真实对手HUD数据 — 从VLM读出的SmartHUD
                     try {
                         val level = when {
                             result.blindBB <= 10 -> "micro_nl2"
@@ -2117,14 +2117,24 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                             else -> "mid_nl50"
                         }
                         val stats = mutableMapOf<String, Float>()
-                        // 参与率估算: 有加注说明对手有侵略性
-                        if (result.toCall > 0) stats["pfr"] = 0.22f
-                        if (result.totalPlayers > 1) {
-                            stats["vpip"] = (result.activePlayers - 1).toFloat() / (result.totalPlayers - 1)
+                        // ★ V3.2: 优先用VLM读出的真实HUD数据(oppHud)
+                        if (result.oppHud.isNotEmpty()) {
+                            val avgVpip = result.oppHud.map { it.vpip }.filter { it > 0 }.average()
+                            val avgPfr = result.oppHud.map { it.pfr }.filter { it > 0 }.average()
+                            val avg3b = result.oppHud.map { it.threeBet }.filter { it > 0 }.average()
+                            val avgAts = result.oppHud.map { it.ats }.filter { it > 0 }.average()
+                            if (avgVpip > 0) stats["vpip"] = (avgVpip / 100f)
+                            if (avgPfr > 0) stats["pfr"] = (avgPfr / 100f)
+                            if (avg3b > 0) stats["threeBet"] = (avg3b / 100f)
+                            if (avgAts > 0) stats["ats"] = (avgAts / 100f)
+                            Log.d(TAG, "★ HUD真实数据: 平均VPIP=${String.format("%.0f", avgVpip)}% PFR=${String.format("%.0f", avgPfr)}% 3bet=${String.format("%.0f", avg3b)}% (${result.oppHud.size}个对手)")
                         }
-                        // 底池下注信号 → CBet倾向
-                        if (result.potSize > 0) {
-                            stats["cbetFlop"] = 0.55f  // 基线估计
+                        // 无HUD数据时才用场景信号估计
+                        if (stats.isEmpty()) {
+                            if (result.toCall > 0) stats["pfr"] = 0.22f
+                            if (result.totalPlayers > 1) {
+                                stats["vpip"] = (result.activePlayers - 1).toFloat() / (result.totalPlayers - 1)
+                            }
                         }
                         if (stats.isNotEmpty()) {
                             HudLearner.recordHand(stats, level)

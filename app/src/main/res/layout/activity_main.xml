@@ -163,6 +163,30 @@
         android:backgroundTint="#d97706"
         android:layout_marginTop="8dp" />
 
+    <EditText
+        android:id="@+id/etGiteeToken"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:hint="Gitee Token（可选：云端同步记忆，换设备不丢）"
+        android:textSize="12sp"
+        android:textColor="#e2e8f0"
+        android:textColorHint="#64748b"
+        android:backgroundTint="#1e293b"
+        android:inputType="textPassword"
+        android:layout_marginTop="12dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp" />
+
+    <Button
+        android:id="@+id/btnSaveGitee"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:text="☁️ 保存Gitee同步"
+        android:textSize="13sp"
+        android:textColor="#ffffff"
+        android:backgroundTint="#0ea5e9"
+        android:layout_marginTop="6dp" />
+
     <TextView
         android:id="@+id/tvHint"
         android:layout_width="wrap_content"

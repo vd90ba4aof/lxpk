@@ -170,6 +170,23 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "✅ API配置已保存: ${VisionApiClient.modelName}", Toast.LENGTH_SHORT).show()
             }
 
+            // V3.2: Gitee Token保存 — 云端同步记忆
+            val etGiteeToken = findViewById<EditText>(R.id.etGiteeToken)
+            val btnSaveGitee = findViewById<Button>(R.id.btnSaveGitee)
+            prefs?.getString("gitee_hud_token", null)?.let { saved ->
+                if (saved.isNotEmpty()) etGiteeToken.setText(saved)
+            }
+            btnSaveGitee.setOnClickListener {
+                val token = etGiteeToken.text.toString().trim()
+                if (token.isEmpty()) {
+                    Toast.makeText(this, "请输入Gitee Token", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                prefs?.edit()?.putString("gitee_hud_token", token)?.apply()
+                HudLearner.setToken(token)
+                Toast.makeText(this, "✅ Gitee同步已保存，换设备自动恢复记忆", Toast.LENGTH_LONG).show()
+            }
+
             btnStart.setOnClickListener {
                 try {
                     if (isRunning) stopServices() else startDirectly()
