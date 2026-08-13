@@ -1944,6 +1944,7 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                 if (localPot > 0) cachedPotSize = localPot  // OCR成功→更新缓存
 
                 // V2.9.210: ChipTracker 定点OCR —— 筹码/D按钮/行动者/SB/BB
+                var chipPlayersCache: List<VisionApiClient.PlayerInfo> = emptyList()
                 if (fastBmp != null) {
                     try {
                         val chipFrame = ChipTracker.analyzeWithFixedCoords(fastBmp)
@@ -1962,6 +1963,20 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                             val heroSeat = chipFrame.players.find { it.id == 6 }
                             if (heroSeat != null && heroSeat.currentChips > 0) {
                                 cachedPlayerChips = heroSeat.currentChips.toInt()
+                            }
+                            // V3.7: 构建玩家下注信息（筹码变化delta=下注额）
+                            chipPlayersCache = chipFrame.players.mapNotNull { p ->
+                                if (p.id == 6) return@mapNotNull null  // 跳过Hero自己
+                                VisionApiClient.PlayerInfo(
+                                    position = seatIndexToPosition(p.id, chipFrame.tablePlayerCount),
+                                    bet = (p.delta?.let { Math.abs(it).toInt() } ?: 0),
+                                    chips = p.currentChips.toInt(),
+                                    active = p.status == "active" || p.status == "betting" || p.status == "allin",
+                                    nickname = p.seatLabel
+                                )
+                            }
+                            if (chipPlayersCache.isNotEmpty()) {
+                                Log.d(TAG, "★ ChipTracker玩家数据: ${chipPlayersCache.size}人 (${chipPlayersCache.filter { it.bet > 0 }.size}人有下注)")
                             }
                             Log.i(TAG, "★ ChipTracker: pot=${chipFrame.potAmount} players=${chipFrame.tablePlayerCount} active=${chipFrame.activePlayerCount} dealer=${chipFrame.dealerSeatIndex} active_seat=${chipFrame.activeSeatIndex} sb=${chipFrame.sbSeatIndex} bb=${chipFrame.bbSeatIndex} hero_pos=$cachedMyPosition")
                         }
@@ -2033,7 +2048,7 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                         blindSB = cachedBlindSB,
                         blindBB = cachedBlindBB,
                         ante = 0,
-                        players = emptyList(),
+                        players = chipPlayersCache,
                         dButtonPosition = cachedMyPosition,
                         rawResponse = "fast_path_local_cv_v2",
                         showdownCards = emptyList(),
