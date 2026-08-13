@@ -2557,6 +2557,8 @@ var HandStateMachine=(function(){
 
   // ====== 翻前决策 ======
   function decidePreflop(k){
+    // V3.9: 入参防护
+    if(!k||typeof k!=='string'||k.length<2){return null;}
     var p=G.pos||'btn';
     var scene=G.scene||'check';
     var stk=G.stk||100000;

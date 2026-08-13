@@ -329,6 +329,8 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
 
 // ====== 翻前决策 (保持V2.9.215) ======
 function decidePreflop(k){
+  // V3.9: 入参防护 — 识别失败时返回null让旧引擎/兜底接管
+  if(!k||typeof k!=='string'||k.length<2){return null;}
   var p=G.pos||'btn', scene=G.scene||'check', stk=G.stk||100000, pot=G.pot||1, bet=G.bet||0;
   var spr=calcSPR(), eq=eQ(k);
   var profile=DRTA.getProfile(), oppType=G.opp||'unknown', p5=_pos5(p);
