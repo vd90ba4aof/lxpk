@@ -790,6 +790,19 @@ class FloatingService : Service() {
         Log.d(TAG, "★ autoTapFallback: $action → ($x, $y) [screen=${sw}x${sh} platform=${GameModeConfig.currentPlatform}]")
         bleManager?.sendTap(x, y, 50)
         handStartTime = 0; _shotClockRunnable?.let { handler.removeCallbacks(it) }; lastDecisionTime = System.currentTimeMillis()
+        // V3.10: 弃牌后重置识别状态 — 防止同rank不同suit的手牌锁定残留
+        if (action == "fold") {
+            try {
+                VisionApiClient.holeCardsLocked = null
+                VisionApiClient.holeCardsRankLocked = null
+                VisionApiClient.streetLocked = null
+                VisionApiClient.dButtonLocked = ""
+                cachedPotSize = 0; cachedToCall = 0; cachedMinRaise = 0
+                Log.d(TAG, "★ 弃牌后重置识别状态和缓存")
+            } catch (e: Exception) {
+                Log.w(TAG, "弃牌重置失败", e)
+            }
+        }
     }
     // V2.9.210: D按钮座位号→Hero位置名称
     private fun seatIndexToPosition(dealerSeat: Int, totalPlayers: Int): String {
