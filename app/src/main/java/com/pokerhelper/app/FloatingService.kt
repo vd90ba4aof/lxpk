@@ -851,10 +851,7 @@ class FloatingService : Service() {
         // V3.10: 弃牌后重置识别状态 — 防止同rank不同suit的手牌锁定残留
         if (action == "fold") {
             try {
-                VisionApiClient.holeCardsLocked = null
-                VisionApiClient.holeCardsRankLocked = null
-                VisionApiClient.streetLocked = null
-                VisionApiClient.dButtonLocked = ""
+                VisionApiClient.resetLocks()
                 cachedPotSize = 0; cachedToCall = 0; cachedMinRaise = 0
                 Log.d(TAG, "★ 弃牌后重置识别状态和缓存")
             } catch (e: Exception) {

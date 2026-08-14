@@ -602,6 +602,15 @@ return VisionResult(isPokerTable, parseCards(data.optJSONArray("hole_cards")), p
         }.toString()
     }
 
+    // V3.16: 弃牌/新一手重置所有锁定状态（供FloatingService调用）
+    fun resetLocks() {
+        holeCardsLocked = null
+        holeCardsRankLocked = null
+        streetLocked = null
+        dButtonLocked = ""
+        suitUncertain = false
+    }
+
     fun updateConfig(provider: String, key: String) {
         apiProvider = provider; apiKey = key
         when (provider) {
