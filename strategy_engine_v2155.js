@@ -353,7 +353,8 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
     return{a:'raise', v:dbSz, r:'GTO DB Turn('+Math.round(dbFreq*100)+'%) '+(sizingPct*100).toFixed(0)+'%',
       eq:eq, c:eq>=50?'h':'m', sizing:dbSz, scene:'DB Turn', spr:spr, _se:true, _seFreq:dbFreq, exploit:adj.note};
   }
-  return null;
+  // V3.21: DB未命中→check兜底
+  return{a:'check', r:'GTO Turn check(DB未中)', eq:eq, c:'m', scene:'check', spr:spr, _se:true};
 }
 
 // ====== 翻前决策 (保持V2.9.215) ======
@@ -584,6 +585,10 @@ function decidePostflop(k){
         var crSz=Math.round(bet*crSzMult);crSz=_sprSizingAdjust(spr,Math.min(crSz,stk),'check_raise');
         var exploitCR=applyExploit(eq,'raise',oppType,{bet:bet,pot:pot});
         return{a:'raise',v:crSz,r:'GTO CR '+btKey+'/'+hcKey+'('+Math.round(crFreq*100)+'%)',eq:exploitCR.eq,c:eq>=50?'h':'m',sizing:crSz,scene:'Check-Raise',spr:spr,_se:true,_seFreq:crFreq};
+      } else {
+        // V3.21: CR未命中频率 → call兜底（面对CBet不能静默弃牌）
+        var _callEq = applyExploit(eq,'call',oppType,{bet:bet,pot:pot});
+        return{a:'call',r:'GTO 面CBet call(CR未中)',eq:_callEq.eq,c:'m',scene:'面对CBet',spr:spr,_se:true,_seFreq:crFreq};
       }
     }
   }
