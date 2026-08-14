@@ -274,6 +274,7 @@ function decideTurnDefense(k, spr, eq, oppProfile, bTexture, hClass){
   var hcKey=_hc2keySafe(_hc2key(hClass),'_TURN_DEFENSE');
   if(hcKey===null) return null;
   if(hcKey===6&&_TURN_DEFENSE[btKey]&&!_TURN_DEFENSE[btKey][6]&&_TURN_DEFENSE[btKey][4])hcKey=4;  // V3.37 MEDIUM→STRONG
+  if(hcKey===11&&_TURN_DEFENSE[btKey]&&!_TURN_DEFENSE[btKey][11]&&_TURN_DEFENSE[btKey][9])hcKey=9;  // V3.38 强听牌→中听牌
   var td=_TURN_DEFENSE[btKey]&&_TURN_DEFENSE[btKey][hcKey];
   if(!td) return null;
 
@@ -639,6 +640,8 @@ function decidePostflop(k){
     var _hcSafe=_hc2keySafe(hcKey,'_CBET');
     // V3.37: MEDIUM(6)在湿面/对子面缺表时fallback到STRONG(4)
     if(_hcSafe===6&&cbTable&&!cbTable[6]&&cbTable[4])_hcSafe=4;
+    // V3.38: 强听牌(11)缺表fallback到中听牌(9)
+    if(_hcSafe===11&&cbTable&&!cbTable[11]&&cbTable[9])_hcSafe=9;
     if(cbTable&&_hcSafe!==null&&cbTable[_hcSafe]){
       var cb=cbTable[_hcSafe];
       var cbFreq=cb[0];
