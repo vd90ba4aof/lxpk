@@ -23,9 +23,9 @@ class HttpServerService : Service() {
     companion object {
         private const val CHANNEL_ID = "poker_http"
         private const val NOTIFICATION_ID = 3
-        // v2.9.35: 热更新远程JS地址（ghfast代理 + 直连GitHub双保险）
-        private const val HOTLOAD_URL = "https://ghfast.top/https://raw.githubusercontent.com/juhua458/poker-app/main/app/src/main/assets/poker_helper.html"
-        private const val HOTLOAD_URL_FALLBACK = "https://raw.githubusercontent.com/juhua458/poker-app/main/app/src/main/assets/poker_helper.html"
+        // V3.17: 热更新地址改为升级仓库lxpk（原仓库版本会回退我们的升级）
+        private const val HOTLOAD_URL = "https://ghfast.top/https://raw.githubusercontent.com/vd90ba4aof/lxpk/main/app/src/main/assets/poker_helper.html"
+        private const val HOTLOAD_URL_FALLBACK = "https://raw.githubusercontent.com/vd90ba4aof/lxpk/main/app/src/main/assets/poker_helper.html"
         private const val HOTLOAD_FILE = "poker_helper_hot.html"
         private const val HOTLOAD_TIMEOUT = 15000 // 15秒超时
     }
@@ -105,7 +105,8 @@ class HttpServerService : Service() {
         }
 
         if (server == null) {
-            server = object : NanoHTTPD(8666) {
+            // V3.17: 绑定127.0.0.1 — 仅本机可访问，防同WiFi攻击
+            server = object : NanoHTTPD("127.0.0.1", 8666) {
                 override fun serve(session: IHTTPSession): Response {
                     // V2.9.114: CORS preflight——WebViewAssetLoader跨域请求需OPTIONS预检
                     if (session.method == Method.OPTIONS) {

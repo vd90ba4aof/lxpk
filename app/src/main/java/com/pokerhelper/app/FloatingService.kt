@@ -486,6 +486,9 @@ class FloatingService : Service() {
     }
 
     private fun initSpeechRecognizer() {
+        // V3.17: 先释放旧的识别器，防止reinit时重复create泄漏
+        try { speechRecognizer?.destroy() } catch (e: Exception) {}
+        speechRecognizer = null
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
             speechRecognizer?.setRecognitionListener(object : RecognitionListener {
