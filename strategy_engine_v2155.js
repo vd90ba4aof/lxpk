@@ -499,7 +499,17 @@ function decidePostflop(k){
   var _is3betPot=spr<10&&(ActionLine.didPreflopRaise()||G._faced3bet||G._heroDid4bet);
   G._is3betPot=_is3betPot;
   var _nActive=0;
-  try{var _pl=G._lastPlayers||[];for(var _pi=0;_pi<_pl.length;_pi++){if(_pl[_pi]&&!_pl[_pi].folded&&_pl[_pi].active)_nActive++;}}catch(e){}
+  try{
+    // V3.33: 多人池检测用G.players(下划线版_lastPlayers从没被赋值过)
+    var _pl=G._lastPlayers&&G._lastPlayers.length>0?G._lastPlayers:(G.players||[]);
+    for(var _pi=0;_pi<_pl.length;_pi++){
+      var _pp=_pl[_pi];
+      if(!_pp)continue;
+      var _isFolded=_pp.folded===true;
+      var _isActive=_pp.active===true||_pp.active===1||(!_isFolded&&_pp.chips>0);
+      if(_isActive&&!_isFolded)_nActive++;
+    }
+  }catch(e){}
   if(_nActive<2)_nActive=2;
   var _isMultiway=_nActive>=3;
   G._isMultiway=_isMultiway;
