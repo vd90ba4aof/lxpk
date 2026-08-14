@@ -210,6 +210,15 @@ function _sprSizingAdjust(spr, baseSizing, scene){
 }
 
 // ★ V3.0: 多尺度sizing选择
+// V3.14: GG四档sizing快照 — 策略输出的任意比例映射到GG仅有的四档
+function _snapToGGTiers(pct){
+  // GG只有: 33% / 50% / 75% / 100% (及allin由执行层单独处理)
+  if(pct>=0.875) return 1.0;
+  if(pct>=0.625) return 0.75;
+  if(pct>=0.415) return 0.5;
+  return 0.33;
+}
+
 function _pickSizing(sizingObj, bTexture, spr){
   var pct;
   if(typeof sizingObj==='object' && sizingObj.d!==undefined){
@@ -221,7 +230,11 @@ function _pickSizing(sizingObj, bTexture, spr){
   } else {
     pct = sizingObj; // fallback to number
   }
-  return _sprSizingAdjust(spr, pct, 'cbet');
+  var adj=_sprSizingAdjust(spr, pct, 'cbet');
+  // V3.14: 映射到GG四档
+  var snapped=_snapToGGTiers(adj);
+  if(snapped!==adj&&G._seEnabled){console.log('[SE] sizing '+Math.round(adj*100)+'%→GG档位'+Math.round(snapped*100)+'%');}
+  return snapped;
 }
 
 function _pickRivSizing(handClass, eq, pot, spr){
@@ -288,6 +301,8 @@ function decideRiverValue(k, spr, eq, oppProfile, bTexture, hClass){
   var pot=G.pot||1, stk=G.stk||100000;
 
   if(Math.random()<rvFreq){
+    // V3.14: GG四档快照 — 价值倍数也映射到GG支持的比例
+    rvMult=_snapToGGTiers(rvMult);
     var rvSz=Math.round(pot*rvMult);
     rvSz=_sprSizingAdjust(spr, Math.min(rvSz, stk), 'river_value');
     return{a:'raise', v:rvSz, r:'GTO River价值('+Math.round(rvFreq*100)+'%) '+(rvMult*100).toFixed(0)+'%pot',
@@ -319,6 +334,8 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
   if(Math.random()<dbFreq){
     var sizingPct = bTexture.wetness>=2?0.70:(bTexture.category==='paired'?0.50:bTexture.hasMonotone?0.65:0.55);
     sizingPct*=adj.sizingMult;
+    // V3.14: GG四档快照
+    sizingPct=_snapToGGTiers(sizingPct);
     var dbSz=Math.round(pot*sizingPct);
     dbSz=_sprSizingAdjust(spr, Math.min(dbSz, stk), 'double_barrel');
     return{a:'raise', v:dbSz, r:'GTO DB Turn('+Math.round(dbFreq*100)+'%) '+(sizingPct*100).toFixed(0)+'%',
