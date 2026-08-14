@@ -2427,6 +2427,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -2893,6 +2896,18 @@ function decidePostflop(k){
   var hcKey=_hc2key(hClass);
   var didPFR=ActionLine.didPreflopRaise();
   var weights=DRTA.getWeights?DRTA.getWeights(profile):{};
+
+  // V3.28: 翻后面对allin — 权益阈值决策（与翻前同逻辑）
+  if(scene==='allin'){
+    var _aiBet=bet||pot;
+    var _aiThresh=_aiBet>0?Math.round(_aiBet/(pot+_aiBet*2)*100):50;
+    _aiThresh=Math.max(_aiThresh,40); // 翻后稍微放宽（有公共牌信息）
+    if(eq>=_aiThresh){
+      var _aiExploit=applyExploit(eq,'call',oppType,{bet:_aiBet,pot:pot});
+      return{a:'call',r:'GTO 翻后vs allin eq'+Math.round(eq)+'%>='+_aiThresh+'%',eq:_aiExploit.eq,c:eq>=65?'h':'m',scene:'面对allin',spr:spr,_se:true};
+    }
+    return _fold(eq,'翻后vs allin eq'+Math.round(eq)+'%<'+_aiThresh+'%',spr);
+  }
 
   // V3.12: 3bet底池/多人池检测 (旧引擎设置，我们丢失后补回)
   var _is3betPot=spr<10&&(ActionLine.didPreflopRaise()||G._faced3bet||G._heroDid4bet);
@@ -3626,6 +3641,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)

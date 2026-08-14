@@ -468,6 +468,18 @@ function decidePostflop(k){
   var didPFR=ActionLine.didPreflopRaise();
   var weights=DRTA.getWeights?DRTA.getWeights(profile):{};
 
+  // V3.28: 翻后面对allin — 权益阈值决策（与翻前同逻辑）
+  if(scene==='allin'){
+    var _aiBet=bet||pot;
+    var _aiThresh=_aiBet>0?Math.round(_aiBet/(pot+_aiBet*2)*100):50;
+    _aiThresh=Math.max(_aiThresh,40); // 翻后稍微放宽（有公共牌信息）
+    if(eq>=_aiThresh){
+      var _aiExploit=applyExploit(eq,'call',oppType,{bet:_aiBet,pot:pot});
+      return{a:'call',r:'GTO 翻后vs allin eq'+Math.round(eq)+'%>='+_aiThresh+'%',eq:_aiExploit.eq,c:eq>=65?'h':'m',scene:'面对allin',spr:spr,_se:true};
+    }
+    return _fold(eq,'翻后vs allin eq'+Math.round(eq)+'%<'+_aiThresh+'%',spr);
+  }
+
   // V3.12: 3bet底池/多人池检测 (旧引擎设置，我们丢失后补回)
   var _is3betPot=spr<10&&(ActionLine.didPreflopRaise()||G._faced3bet||G._heroDid4bet);
   G._is3betPot=_is3betPot;
