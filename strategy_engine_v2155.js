@@ -211,8 +211,10 @@ function _quantExploitAdjust(freq, act, oppProfile, boardTexture){
 }
 
 function _sprSizingAdjust(spr, baseSizing, scene){
-  if(spr<2) return Math.min(baseSizing, spr*0.6);
-  if(spr<5) return Math.min(baseSizing, spr*0.35);
+  // V3.23: 修正单位混乱 — baseSizing是金额, spr倍率×pot才是金额
+  var pot=G.pot||1;
+  if(spr<2) return Math.min(baseSizing, pot*0.6);
+  if(spr<5) return Math.min(baseSizing, pot*0.75);
   if(spr>12) return baseSizing*1.2;
   return baseSizing;
 }

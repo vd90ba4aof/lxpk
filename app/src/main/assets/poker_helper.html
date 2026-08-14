@@ -2418,6 +2418,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -2628,8 +2631,10 @@ function _quantExploitAdjust(freq, act, oppProfile, boardTexture){
 }
 
 function _sprSizingAdjust(spr, baseSizing, scene){
-  if(spr<2) return Math.min(baseSizing, spr*0.6);
-  if(spr<5) return Math.min(baseSizing, spr*0.35);
+  // V3.23: 修正单位混乱 — baseSizing是金额, spr倍率×pot才是金额
+  var pot=G.pot||1;
+  if(spr<2) return Math.min(baseSizing, pot*0.6);
+  if(spr<5) return Math.min(baseSizing, pot*0.75);
   if(spr>12) return baseSizing*1.2;
   return baseSizing;
 }
@@ -3602,6 +3607,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
