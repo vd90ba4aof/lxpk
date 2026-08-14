@@ -791,7 +791,8 @@ function _riverFullEnumerateEV(k,hcKey,hasInitiative,scene,betSz,pot,btKey,ip,_s
     if(!bestA)return null;
     var rH=Math.round(eq*100);
     var result={
-      a:bestA, v:bestSz,
+      // V3.20: action归一化 — 'bet'/'bluff'→'raise' (Kotlin执行层只认raise)
+      a:(bestA==='bet'||bestA==='bluff')?'raise':bestA, v:bestSz,
       r:'',
       eq:rH,
       c:eq>=0.5?'h':(eq>=0.3?'m':'l'),
@@ -864,7 +865,8 @@ function _turnFullEnumerateEV(k,hcKey,hasInitiative,scene,betSz,pot,btKey,ip,_sp
     var _statFold=_coreR._statFold, _raiseFold=_coreR._raiseFold;
     var rH=Math.round(eq*100);
     var result={
-      a:bestA, v:bestSz,
+      // V3.20: action归一化
+      a:(bestA==='bet'||bestA==='bluff')?'raise':bestA, v:bestSz,
       r:'',
       eq:rH,
       c:eq>=0.5?'h':(eq>=0.3?'m':'l'),

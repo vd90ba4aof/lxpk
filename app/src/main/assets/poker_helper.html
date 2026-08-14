@@ -2409,6 +2409,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -3199,7 +3202,8 @@ function _riverFullEnumerateEV(k,hcKey,hasInitiative,scene,betSz,pot,btKey,ip,_s
     if(!bestA)return null;
     var rH=Math.round(eq*100);
     var result={
-      a:bestA, v:bestSz,
+      // V3.20: action归一化 — 'bet'/'bluff'→'raise' (Kotlin执行层只认raise)
+      a:(bestA==='bet'||bestA==='bluff')?'raise':bestA, v:bestSz,
       r:'',
       eq:rH,
       c:eq>=0.5?'h':(eq>=0.3?'m':'l'),
@@ -3272,7 +3276,8 @@ function _turnFullEnumerateEV(k,hcKey,hasInitiative,scene,betSz,pot,btKey,ip,_sp
     var _statFold=_coreR._statFold, _raiseFold=_coreR._raiseFold;
     var rH=Math.round(eq*100);
     var result={
-      a:bestA, v:bestSz,
+      // V3.20: action归一化
+      a:(bestA==='bet'||bestA==='bluff')?'raise':bestA, v:bestSz,
       r:'',
       eq:rH,
       c:eq>=0.5?'h':(eq>=0.3?'m':'l'),
@@ -3586,6 +3591,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
