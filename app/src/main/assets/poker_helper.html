@@ -2451,6 +2451,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -3666,7 +3669,7 @@ function _facingCBet(k,hcKey,btKey,ip,betSz,pot,street,isDonk){
     // 归一化
     var sum=adjC+adjR+adjF;
     if(sum>0.01){adjC/=sum;adjR/=sum;adjF/=sum;}else{adjC=e.c;adjR=e.r;adjF=e.f;}
-    var _fcbEA=ExploitAdjuster(1,'facing_cbet',hcKey,oppType,street||'flop','facing_cbet');
+    var _fcbEA=ExploitAdjuster(1,'facing_cbet',hcKey,(typeof oppType!=='undefined'?oppType:(G.opp||'unknown')),street||'flop','facing_cbet');
     if(_fcbEA.label){adjR=adjR*_fcbEA.freq;adjC=adjC+(1-_fcbEA.freq)*adjC;adjF=1-adjR-adjC;if(adjF<0)adjF=0;}
     // V2.9.161: SPR区面CBet调整
     var _sprAdjSafe=(typeof _sprAdj!=='undefined'&&_sprAdj)?_sprAdj:{fcb:1,cbet:1,bluff:1};  // V3.35: 默认值防止ReferenceError
@@ -3791,6 +3794,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)

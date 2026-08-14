@@ -1216,7 +1216,7 @@ function _facingCBet(k,hcKey,btKey,ip,betSz,pot,street,isDonk){
     // 归一化
     var sum=adjC+adjR+adjF;
     if(sum>0.01){adjC/=sum;adjR/=sum;adjF/=sum;}else{adjC=e.c;adjR=e.r;adjF=e.f;}
-    var _fcbEA=ExploitAdjuster(1,'facing_cbet',hcKey,oppType,street||'flop','facing_cbet');
+    var _fcbEA=ExploitAdjuster(1,'facing_cbet',hcKey,(typeof oppType!=='undefined'?oppType:(G.opp||'unknown')),street||'flop','facing_cbet');
     if(_fcbEA.label){adjR=adjR*_fcbEA.freq;adjC=adjC+(1-_fcbEA.freq)*adjC;adjF=1-adjR-adjC;if(adjF<0)adjF=0;}
     // V2.9.161: SPR区面CBet调整
     var _sprAdjSafe=(typeof _sprAdj!=='undefined'&&_sprAdj)?_sprAdj:{fcb:1,cbet:1,bluff:1};  // V3.35: 默认值防止ReferenceError
