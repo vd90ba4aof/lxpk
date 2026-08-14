@@ -2406,6 +2406,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -2967,7 +2970,7 @@ function decidePostflop(k){
         cbFreq=adj.freq;
       }
       if(Math.random()<cbFreq){
-        var cbPct=_pickSizing(cb[1],bTexture,spr)/pot;
+        var cbPct=_pickSizing(cb[1],bTexture,spr);
         var cbSz=Math.round(pot*cbPct);cbSz=Math.min(cbSz,stk);
         var exploitR=applyExploit(eq,ip?'bet':'bet',oppType,{bet:bet,pot:pot});
         return{a:'raise',v:cbSz,r:'GTO CBet '+btKey+'/'+hcKey+'('+Math.round(cbFreq*100)+'%)',eq:exploitR.eq,c:eq>=55?'h':eq>=45?'m':'l',sizing:cbSz,scene:'CBet',spr:spr,sprAdvice:getSPRAdvice(spr),exploit:exploitR.exploit,drta:{type:profile.type,conf:profile.confidence,weights:weights},_se:true,_seFreq:cbFreq};
@@ -3583,6 +3586,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)

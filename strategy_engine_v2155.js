@@ -562,7 +562,7 @@ function decidePostflop(k){
         cbFreq=adj.freq;
       }
       if(Math.random()<cbFreq){
-        var cbPct=_pickSizing(cb[1],bTexture,spr)/pot;
+        var cbPct=_pickSizing(cb[1],bTexture,spr);
         var cbSz=Math.round(pot*cbPct);cbSz=Math.min(cbSz,stk);
         var exploitR=applyExploit(eq,ip?'bet':'bet',oppType,{bet:bet,pot:pot});
         return{a:'raise',v:cbSz,r:'GTO CBet '+btKey+'/'+hcKey+'('+Math.round(cbFreq*100)+'%)',eq:exploitR.eq,c:eq>=55?'h':eq>=45?'m':'l',sizing:cbSz,scene:'CBet',spr:spr,sprAdvice:getSPRAdvice(spr),exploit:exploitR.exploit,drta:{type:profile.type,conf:profile.confidence,weights:weights},_se:true,_seFreq:cbFreq};
