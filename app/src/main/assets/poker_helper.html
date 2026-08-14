@@ -8022,7 +8022,7 @@ function _decideInner(){
     //        跳过EV护栏主动fold（数学负EV，强行call会出新坑）
     //        V2.9.125/V2.9.72/V2.9.123所有保护点100%保留
     try{
-      if(result.a==='fold' && _cc>0){
+      if(result.a==='fold' && _cc>0 && !result._nash){  // V3.27: 纳什fold不被池驱反fold劫持
         // V2.9.144: EV护栏主动fold=数学负EV,不反fold(避免乱call新坑)
         // 阈值同步放宽到-4，与EV护栏一致
         var _evGuardedFold=result._evs&&result._evs.fold&&result._evs.fold.ev<-4;
