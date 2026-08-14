@@ -254,6 +254,7 @@ function _pickRivSizing(handClass, eq, pot, spr){
   var btKey = _bt2keyNewTable(_bt2key(bTexture));
   var hcKey = _hc2keySafe(_hc2key(handClass),'_RIV');
   if(hcKey===null) return pot*0.45;
+  if(hcKey===6&&_RIV_VALUE[btKey]&&!_RIV_VALUE[btKey][6]&&_RIV_VALUE[btKey][4])hcKey=4;  // V3.37 MEDIUM→STRONG
   var rv=_RIV_VALUE[btKey]&&_RIV_VALUE[btKey][hcKey];
   if(!rv) return pot*0.45;
   var sizingMult=rv[1];
@@ -272,6 +273,7 @@ function decideTurnDefense(k, spr, eq, oppProfile, bTexture, hClass){
   var btKey=_bt2keyNewTable(_bt2key(bTexture));
   var hcKey=_hc2keySafe(_hc2key(hClass),'_TURN_DEFENSE');
   if(hcKey===null) return null;
+  if(hcKey===6&&_TURN_DEFENSE[btKey]&&!_TURN_DEFENSE[btKey][6]&&_TURN_DEFENSE[btKey][4])hcKey=4;  // V3.37 MEDIUM→STRONG
   var td=_TURN_DEFENSE[btKey]&&_TURN_DEFENSE[btKey][hcKey];
   if(!td) return null;
 
@@ -310,6 +312,7 @@ function decideRiverValue(k, spr, eq, oppProfile, bTexture, hClass){
   var btKey=_bt2keyNewTable(_bt2key(bTexture));
   var hcKey=_hc2keySafe(_hc2key(hClass),'_RIV');
   if(hcKey===null) return null;
+  if(hcKey===6&&_RIV_VALUE[btKey]&&!_RIV_VALUE[btKey][6]&&_RIV_VALUE[btKey][4])hcKey=4;  // V3.37 MEDIUM→STRONG
   var rv=_RIV_VALUE[btKey]&&_RIV_VALUE[btKey][hcKey];
   if(!rv) return null;
 
@@ -340,6 +343,8 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
   var hcKey=_hc2key(hClass);
   var dbTable=_DB_TURN[_bt2keyNewTable(btKey)];
   var _hcSafe2=_hc2keySafe(hcKey,'_DB');
+  // V3.37: MEDIUM(6)缺表fallback到STRONG(4)
+  if(_hcSafe2===6&&dbTable&&!dbTable[6]&&dbTable[4])_hcSafe2=4;
   if(!dbTable||_hcSafe2===null||!dbTable[_hcSafe2]) return null;
 
   var dbFreq=dbTable[_hcSafe2][0];
@@ -632,6 +637,8 @@ function decidePostflop(k){
   if(didPFR&&scene==='check'&&street!=='river'){
     var cbTable=ip?_CBET_IP[_bt2keyNewTable(btKey)]:_CBET_OOP[_bt2keyNewTable(btKey)];
     var _hcSafe=_hc2keySafe(hcKey,'_CBET');
+    // V3.37: MEDIUM(6)在湿面/对子面缺表时fallback到STRONG(4)
+    if(_hcSafe===6&&cbTable&&!cbTable[6]&&cbTable[4])_hcSafe=4;
     if(cbTable&&_hcSafe!==null&&cbTable[_hcSafe]){
       var cb=cbTable[_hcSafe];
       var cbFreq=cb[0];
@@ -828,7 +835,7 @@ function _turnBarrel(k,hcKey,btKey,turnType,betSz,pot,didFlopCBet,ip,_oppType,_s
     var table=_tbTable[btKey+'_'+turnType];
     if(!table||!table[hcKey])return null;
     var e=table[hcKey];
-    var barrelFreq=e[0];barrelFreq=_applyPipeline(barrelFreq,'bet',hcKey,_oppType||oppType,'turn','barrel',_sprAdj2||_sprAdj,_is3bP2!==undefined?_is3bP2:_is3betPot,_isMW2!==undefined?_isMW2:_isMultiway);
+    var barrelFreq=e[0];barrelFreq=_applyPipeline(barrelFreq,'bet',hcKey,_oppType||oppType,'turn','barrel',_sprAdj2||{cbet:1,fcb:1,bluff:1},_is3bP2!==undefined?_is3bP2:_is3betPot,_isMW2!==undefined?_isMW2:_isMultiway);
     // V2.9.161: Flop未CBet时大幅降低barrel频率
     if(didFlopCBet===false)barrelFreq=barrelFreq*0.3;
     var spr=calcSPR();
@@ -869,9 +876,9 @@ var _RIV={
   };
 
 function _riverDecision(k,hcKey,hasInitiative,scene,betSz,pot,btKey,ip,_sprAdj3,_is3bP3,_isMW3){
-    // V3.35: _sprAdj默认值(调用方可能传null)
-    if(typeof _sprAdj==='undefined'||!_sprAdj)_sprAdj={fcb:1,cbet:1,bluff:1};
-    if(!_sprAdj3)_sprAdj3=_sprAdj;
+    // V3.36: _sprAdj默认值改为局部变量(避免隐式全局污染)
+    var _sprAdjLocal=(typeof _sprAdj!=='undefined'&&_sprAdj)?_sprAdj:{fcb:1,cbet:1,bluff:1};
+    if(!_sprAdj3)_sprAdj3=_sprAdjLocal;
     // V2.9.161: River按面纹理+位置选择策略表
     var rivTbl=ip?_RIV.IP:_RIV.OOP;
     var rivKey=btKey+'_'+(scene==='check'?'bet':'face');
