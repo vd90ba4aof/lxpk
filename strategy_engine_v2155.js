@@ -337,7 +337,7 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
   var _hcSafe2=_hc2keySafe(hcKey,'_DB');
   if(!dbTable||_hcSafe2===null||!dbTable[_hcSafe2]) return null;
 
-  var dbFreq=dbTable[hcKey][0];
+  var dbFreq=dbTable[_hcSafe2][0];
   var pot=G.pot||1, stk=G.stk||100000;
 
   var adj=_quantExploitAdjust(dbFreq, 'raise', oppProfile, bTexture);
@@ -556,7 +556,7 @@ function decidePostflop(k){
     var cbTable=ip?_CBET_IP[_bt2keyNewTable(btKey)]:_CBET_OOP[_bt2keyNewTable(btKey)];
     var _hcSafe=_hc2keySafe(hcKey,'_CBET');
     if(cbTable&&_hcSafe!==null&&cbTable[_hcSafe]){
-      var cb=cbTable[hcKey];
+      var cb=cbTable[_hcSafe];
       var cbFreq=cb[0];
       if(ip&&scene==='check'){
         var adj=_quantExploitAdjust(cbFreq,'raise',profile,bTexture);

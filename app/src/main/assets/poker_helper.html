@@ -2415,6 +2415,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -2751,7 +2754,7 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
   var _hcSafe2=_hc2keySafe(hcKey,'_DB');
   if(!dbTable||_hcSafe2===null||!dbTable[_hcSafe2]) return null;
 
-  var dbFreq=dbTable[hcKey][0];
+  var dbFreq=dbTable[_hcSafe2][0];
   var pot=G.pot||1, stk=G.stk||100000;
 
   var adj=_quantExploitAdjust(dbFreq, 'raise', oppProfile, bTexture);
@@ -2970,7 +2973,7 @@ function decidePostflop(k){
     var cbTable=ip?_CBET_IP[_bt2keyNewTable(btKey)]:_CBET_OOP[_bt2keyNewTable(btKey)];
     var _hcSafe=_hc2keySafe(hcKey,'_CBET');
     if(cbTable&&_hcSafe!==null&&cbTable[_hcSafe]){
-      var cb=cbTable[hcKey];
+      var cb=cbTable[_hcSafe];
       var cbFreq=cb[0];
       if(ip&&scene==='check'){
         var adj=_quantExploitAdjust(cbFreq,'raise',profile,bTexture);
@@ -3599,6 +3602,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
