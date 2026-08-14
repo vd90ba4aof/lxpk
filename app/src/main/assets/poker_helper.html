@@ -2430,6 +2430,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -2827,7 +2830,18 @@ function decidePreflop(k){
 
   // 1: 开池
   if(scene==='check'||scene==='call'||scene==='open'){  // V3.26: 'open'=Straddle局开池场景
-    var rfi=_RFI[p5];if(!rfi)return null;var freq=rfi[k];
+    var rfi=_RFI[p5];
+    // V3.29b: BB check option — 无人加注时BB免费看牌
+    if(p5==='BB'&&(scene==='check'||scene==='call'||scene==='open')&&bet===0){
+      return{a:'check',r:'BB check option(无人加注免费看牌)',eq:eq,c:'m',scene:'看牌',spr:spr,_se:true,_seFreq:1};
+    }
+    if(!rfi)return null;var freq=rfi[k];
+    // V3.29: limper调整 — 前面有人平跟时收紧范围(隔离加注质量更高)
+    var _nLimpers=(G.limpers>0?G.limpers:0);
+    if(_nLimpers>0){
+      if(_nLimpers===1){freq=(freq===undefined?undefined:freq*0.85);}
+      else{freq=(freq===undefined?undefined:freq*0.7);}
+    }
     var adj=_quantExploitAdjust(freq||0,'raise',profile);freq=adj.freq>freq?adj.freq:(freq||0);
     if(freq===undefined||freq===0){if(oppType==='nit'||oppType==='tight')freq=0.05;else return _fold(eq,'不在'+p5+'RFI范围',spr);}
     if(Math.random()>freq)return _fold(eq,p5+' RFI '+Math.round(freq*100)+'%→弃牌',spr);
@@ -3641,6 +3655,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)

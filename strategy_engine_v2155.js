@@ -398,7 +398,18 @@ function decidePreflop(k){
 
   // 1: 开池
   if(scene==='check'||scene==='call'||scene==='open'){  // V3.26: 'open'=Straddle局开池场景
-    var rfi=_RFI[p5];if(!rfi)return null;var freq=rfi[k];
+    var rfi=_RFI[p5];
+    // V3.29b: BB check option — 无人加注时BB免费看牌
+    if(p5==='BB'&&(scene==='check'||scene==='call'||scene==='open')&&bet===0){
+      return{a:'check',r:'BB check option(无人加注免费看牌)',eq:eq,c:'m',scene:'看牌',spr:spr,_se:true,_seFreq:1};
+    }
+    if(!rfi)return null;var freq=rfi[k];
+    // V3.29: limper调整 — 前面有人平跟时收紧范围(隔离加注质量更高)
+    var _nLimpers=(G.limpers>0?G.limpers:0);
+    if(_nLimpers>0){
+      if(_nLimpers===1){freq=(freq===undefined?undefined:freq*0.85);}
+      else{freq=(freq===undefined?undefined:freq*0.7);}
+    }
     var adj=_quantExploitAdjust(freq||0,'raise',profile);freq=adj.freq>freq?adj.freq:(freq||0);
     if(freq===undefined||freq===0){if(oppType==='nit'||oppType==='tight')freq=0.05;else return _fold(eq,'不在'+p5+'RFI范围',spr);}
     if(Math.random()>freq)return _fold(eq,p5+' RFI '+Math.round(freq*100)+'%→弃牌',spr);
