@@ -727,8 +727,15 @@ class FloatingService : Service() {
                 val sizing = decisionData.optInt("sizing", 0)
                 val pot = decisionData.optInt("pot", 0)
                 val phase = decisionData.optString("phase", "post")
-                // V3.15: 翻前加注用GG滑动条(默认值), 翻后才走四档按钮
-                if (sizing > 0 && pot > 0 && phase != "pre" && GameModeConfig.currentPlatform == GamePlatform.GGPOKER) {
+                // V3.16: 翻前raise → 直接点GG加注按钮(默认2.5x min-raise)
+                //        翻后raise → 四档按钮(33/50/75/100%)
+                if (phase == "pre") {
+                    Log.d(TAG, "★ GG翻前加注: 直接点加注按钮 (策略size=${sizing})")
+                    executeAutoTapFallback("raise")
+                    handStartTime = 0; _shotClockRunnable?.let { handler.removeCallbacks(it) }; lastDecisionTime = System.currentTimeMillis()
+                    return
+                }
+                if (sizing > 0 && pot > 0 && GameModeConfig.currentPlatform == GamePlatform.GGPOKER) {
                     val betBtnAction = GameModeConfig.getBetButtonAction(sizing, pot)
                     Log.d(TAG, "★ GG bet sizing: action=$action sizing=$sizing pot=$pot → $betBtnAction")
                     // V3.14: 优先尝试精确金额输入（配置了键盘坐标时）

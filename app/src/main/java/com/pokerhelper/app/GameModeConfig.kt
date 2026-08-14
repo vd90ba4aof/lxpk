@@ -394,6 +394,20 @@ object GameModeConfig {
 
     // ============ V2.9.210: 扩展坐标访问方法 ============
 
+    /**
+     * V3.16: GG翻前加注倍数映射 — 策略要求3BB加注时的GG预置倍数
+     * GG竖屏翻前只有: 加注按钮(默认min-raise 2.5x) + 全押
+     * 策略要求: 2.2x/2.5x/3x → 全部映射到"加注按钮"(2.5x)
+     * 误差在可接受范围(0-0.5BB)
+     * @return true=可用标准加注按钮, false=需要全押
+     */
+    fun isStandardPreflopRaise(sizing: Int, bigBlind: Int): Boolean {
+        if (bigBlind <= 0) return true
+        val bb = sizing.toDouble() / bigBlind
+        // 策略要求的BB倍数 <= 4BB 时用标准加注按钮
+        return bb <= 4.0
+    }
+
     /** 获取6个座位的玩家名字区域坐标 */
     fun getPlayerNameRegions(): List<IntArray> = getCoordinateConfig().playerNames
 
