@@ -869,6 +869,9 @@ var _RIV={
   };
 
 function _riverDecision(k,hcKey,hasInitiative,scene,betSz,pot,btKey,ip,_sprAdj3,_is3bP3,_isMW3){
+    // V3.35: _sprAdj默认值(调用方可能传null)
+    if(typeof _sprAdj==='undefined'||!_sprAdj)_sprAdj={fcb:1,cbet:1,bluff:1};
+    if(!_sprAdj3)_sprAdj3=_sprAdj;
     // V2.9.161: River按面纹理+位置选择策略表
     var rivTbl=ip?_RIV.IP:_RIV.OOP;
     var rivKey=btKey+'_'+(scene==='check'?'bet':'face');
@@ -1216,7 +1219,8 @@ function _facingCBet(k,hcKey,btKey,ip,betSz,pot,street,isDonk){
     var _fcbEA=ExploitAdjuster(1,'facing_cbet',hcKey,oppType,street||'flop','facing_cbet');
     if(_fcbEA.label){adjR=adjR*_fcbEA.freq;adjC=adjC+(1-_fcbEA.freq)*adjC;adjF=1-adjR-adjC;if(adjF<0)adjF=0;}
     // V2.9.161: SPR区面CBet调整
-    adjF=adjF*_sprAdj.fcb;
+    var _sprAdjSafe=(typeof _sprAdj!=='undefined'&&_sprAdj)?_sprAdj:{fcb:1,cbet:1,bluff:1};  // V3.35: 默认值防止ReferenceError
+    adjF=adjF*_sprAdjSafe.fcb;
     // 频率随机决策
     var r=Math.random();
     var spr=calcSPR();
