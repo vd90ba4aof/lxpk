@@ -916,6 +916,80 @@ var _FCB_OOP={
     '6_l':{0:{c:0.36,r:0.64,f:0.0},1:{c:0.47,r:0.53,f:0.0},2:{c:0.66,r:0.34,f:0.0},3:{c:0.84,r:0.16,f:0.0},4:{c:0.85,r:0.08,f:0.07},5:{c:0.62,r:0.0,f:0.38},6:{c:0.41,r:0.0,f:0.59},7:{c:0.27,r:0.0,f:0.73},8:{c:0.62,r:0.24,f:0.14},9:{c:0.66,r:0.07,f:0.27},10:{c:0.41,r:0.0,f:0.59},11:{c:0.54,r:0.07,f:0.39},12:{c:0.31,r:0.0,f:0.69},13:{c:0.15,r:0.0,f:0.85},14:{c:0.07,r:0.0,f:0.93},15:{c:0.02,r:0.0,f:0.98}}
   };
 
+// ====== V3.13: _applyPipeline (从v2.9.164合并) ======
+// ====== V2.9.161: RangeEstimator 对手范围推断 ======
+  var RangeEstimator={
+    // 从OppProfiler统计推断范围宽度
+    getWidth:function(oppType,street){
+      var widths={
+        nit:{preflop:'narrow',flop:'narrow',turn:'very_narrow',river:'very_narrow'},
+        tight:{preflop:'narrow',flop:'narrow',turn:'narrow',river:'narrow'},
+        tag:{preflop:'medium',flop:'medium',turn:'medium',river:'narrow'},
+        lag:{preflop:'wide',flop:'wide',turn:'medium',river:'medium'},
+        fish:{preflop:'wide',flop:'wide',turn:'wide',river:'wide'},
+        calling_station:{preflop:'wide',flop:'wide',turn:'wide',river:'wide'},
+        maniac:{preflop:'very_wide',flop:'very_wide',turn:'wide',river:'wide'},
+        unknown:{preflop:'medium',flop:'medium',turn:'medium',river:'medium'}
+      };
+      var w=(widths[oppType]||widths.unknown);
+      return w[street]||w.preflop;
+    },
+    // 范围宽度→组合数估计(粗略)
+    comboCount:function(width){
+      return{very_narrow:30,narrow:60,medium:120,wide:200,very_wide:350}[width]||120;
+    },
+    // 范围宽度→对手range中弱牌占比
+    weakRatio:function(width){
+      return{very_narrow:0.15,narrow:0.25,medium:0.40,wide:0.55,very_wide:0.70}[width]||0.40;
+    },
+    // 基于范围推断调整频率
+    adjustForRange:function(baseFreq,oppType,street,action){
+      var w=this.getWidth(oppType,street);
+      var adj=baseFreq;
+      if(action==='bluff'||action==='bet'){
+        // 对手range宽→bluff效果差; 对手range窄→bluff效果好
+        var wr=this.weakRatio(w);
+        if(wr>0.5)adj*=0.75; // 对手range宽，很多call
+        else if(wr<0.3)adj*=1.3; // 对手range窄，容易fold
+      }else if(action==='call'){
+        // 对手range宽→我们的中等牌更fold(对手真牌多)
+        if(w==='wide'||w==='very_wide')adj*=0.8;
+      }else if(action==='fold'){
+        // 对手range窄→更难fold(面对强range)
+        if(w==='narrow'||w==='very_narrow')adj*=1.2;
+      }
+      return Math.max(0,Math.min(1,adj));
+    }
+  }
+
+function _applyPipeline(baseFreq,action,hcKey,oppType,street,context,sprAdj,is3bP,isMW){
+    var f=baseFreq;
+    sprAdj=sprAdj||{cbet:1,fcb:1,bluff:1};
+    // 1) SPR调整
+    if(context==='cbet'||context==='barrel'||context==='donk'||context==='cr'){
+      f=f*sprAdj.cbet;if(hcKey>=12)f=f*sprAdj.bluff;
+    }else if(context==='facing'){
+      f=f*sprAdj.fcb;
+    }
+    // 2) 3bet底池
+    if(is3bP){
+      if(context==='facing'){/* FCB内部已处理 */}
+      else if(hcKey<=4){f=Math.min(.95,f*1.15);}
+      else if(hcKey>=13){f=f*0.6;}
+    }
+    // 3) 多人池
+    if(isMW){
+      if(context==='facing'){/* FCB内部已处理 */}
+      else{f=f*0.7;}
+    }
+    // 4) ExploitAdjuster
+    var ea=ExploitAdjuster(f,action,hcKey,oppType,street||'flop',context);
+    f=ea.freq;if(ea.label)console.log('[SE161] EA: '+ea.label);
+    // 5) RangeEstimator
+    f=RangeEstimator.adjustForRange(f,oppType,street||'flop',action);
+    return f;
+  }
+
 function _facingCBet(k,hcKey,btKey,ip,betSz,pot,street,isDonk){
     var szRatio=betSz/Math.max(pot,1);
     // V2.9.161: 尺度三档 s/m/l (34-66%不再被当大注)
