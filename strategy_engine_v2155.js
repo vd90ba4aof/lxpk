@@ -367,6 +367,19 @@ function decidePreflop(k){
   var spr=calcSPR(), eq=eQ(k);
   var profile=DRTA.getProfile(), oppType=G.opp||'unknown', p5=_pos5(p);
 
+  // V3.24: 纳什push/fold — 短码(<15BB)时替代GTO策略
+  if(spr<1.5){
+    try{
+      if(typeof NashPushFold!=='undefined'&&typeof NashPushFold.decide==='function'){
+        var _nashEffBB=Math.round(1/Math.max(spr,0.02));
+        if(_nashEffBB<=15){
+          var _nashR=NashPushFold.decide(k,p,scene,spr,_nashEffBB,bet,pot);
+          if(_nashR)return _nashR;
+        }
+      }
+    }catch(e){}
+  }
+
   var _specBonus=0;
   if(k.length===2&&k[0]===k[1]&&'23456'.indexOf(k[0])>=0)_specBonus+=8;
   if(k.indexOf('s')>=0&&k.length===3){var _sr=k.slice(0,2),_r1=RV[_sr[0]],_r2=RV[_sr[1]];if(_r1!==undefined&&_r2!==undefined){var _gap=Math.abs(_r1-_r2);if(_gap===1)_specBonus+=5;else if(_gap===2)_specBonus+=4;else _specBonus+=2;if(_sr[0]==='A')_specBonus+=3;}}
