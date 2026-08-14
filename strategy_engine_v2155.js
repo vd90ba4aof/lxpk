@@ -247,7 +247,8 @@ function _pickSizing(sizingObj, bTexture, spr){
 
 function _pickRivSizing(handClass, eq, pot, spr){
   var btKey = _bt2keyNewTable(_bt2key(bTexture));
-  var hcKey = _hc2key(handClass);
+  var hcKey = _hc2keySafe(_hc2key(handClass),'_RIV');
+  if(hcKey===null) return pot*0.45;
   var rv=_RIV_VALUE[btKey]&&_RIV_VALUE[btKey][hcKey];
   if(!rv) return pot*0.45;
   var sizingMult=rv[1];
@@ -263,8 +264,9 @@ function decideTurnDefense(k, spr, eq, oppProfile, bTexture, hClass){
   var scene = G.scene||'check';
   if(scene!=='raise') return null; // 必须面对下注
 
-  var btKey=_bt2key(bTexture);
-  var hcKey=_hc2key(hClass);
+  var btKey=_bt2keyNewTable(_bt2key(bTexture));
+  var hcKey=_hc2keySafe(_hc2key(hClass),'_TURN_DEFENSE');
+  if(hcKey===null) return null;
   var td=_TURN_DEFENSE[btKey]&&_TURN_DEFENSE[btKey][hcKey];
   if(!td) return null;
 
@@ -301,7 +303,8 @@ function decideRiverValue(k, spr, eq, oppProfile, bTexture, hClass){
   if(!didPFR) return null;
 
   var btKey=_bt2keyNewTable(_bt2key(bTexture));
-  var hcKey=_hc2key(hClass);
+  var hcKey=_hc2keySafe(_hc2key(hClass),'_RIV');
+  if(hcKey===null) return null;
   var rv=_RIV_VALUE[btKey]&&_RIV_VALUE[btKey][hcKey];
   if(!rv) return null;
 
@@ -331,7 +334,8 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
   var btKey=_bt2key(bTexture);
   var hcKey=_hc2key(hClass);
   var dbTable=_DB_TURN[_bt2keyNewTable(btKey)];
-  if(!dbTable||!dbTable[hcKey]) return null;
+  var _hcSafe2=_hc2keySafe(hcKey,'_DB');
+  if(!dbTable||_hcSafe2===null||!dbTable[_hcSafe2]) return null;
 
   var dbFreq=dbTable[hcKey][0];
   var pot=G.pot||1, stk=G.stk||100000;
@@ -549,7 +553,8 @@ function decidePostflop(k){
   // ====== CBet ======
   if(didPFR&&scene==='check'&&street!=='river'){
     var cbTable=ip?_CBET_IP[_bt2keyNewTable(btKey)]:_CBET_OOP[_bt2keyNewTable(btKey)];
-    if(cbTable&&cbTable[hcKey]){
+    var _hcSafe=_hc2keySafe(hcKey,'_CBET');
+    if(cbTable&&_hcSafe!==null&&cbTable[_hcSafe]){
       var cb=cbTable[hcKey];
       var cbFreq=cb[0];
       if(ip&&scene==='check'){
@@ -571,8 +576,9 @@ function decidePostflop(k){
   // ====== Check-Raise ======
   if(!ip&&scene==='raise'&&!didPFR&&street==='flop'){
     var crTable=_CR[_bt2keyNewTable(btKey)];
-    if(crTable&&crTable[hcKey]){
-      var cr=crTable[hcKey];var crFreq=cr[0];var crSzMult=cr[1];
+    var _hcCR=_hc2keySafe(hcKey,'_CR');
+    if(crTable&&_hcCR!==null&&crTable[_hcCR]){
+      var cr=crTable[_hcCR];var crFreq=cr[0];var crSzMult=cr[1];
       if(OppProfiler&&OppProfiler.getStat){var oppCB=OppProfiler.getStat('cbetFlop');if(oppCB>.7)crFreq=Math.min(.3,crFreq*1.5);}
       if(Math.random()<crFreq){
         var crSz=Math.round(bet*crSzMult);crSz=_sprSizingAdjust(spr,Math.min(crSz,stk),'check_raise');
@@ -1172,3 +1178,12 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
