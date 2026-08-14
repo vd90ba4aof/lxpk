@@ -438,7 +438,8 @@ function decidePreflop(k){
 
   // 3: 面对3bet
   if(scene==='reraise'){
-    var f3b=_F3B[p5];if(!f3b)return null;var entry3=f3b[k];if(!entry3)return _fold(eq,k+' vs 3bet→fold',spr);
+    var _f3bKey=p5==='MP'?'UTG1':p5;  // V3.31: MP位置用UTG1策略(5人桌早期位置)
+    var f3b=_F3B[_f3bKey];if(!f3b)return null;var entry3=f3b[k];if(!entry3)return _fold(eq,k+' vs 3bet→fold',spr);
     var act3=entry3.a,f3=entry3.f;
     if(act3==='4b'&&Math.random()>f3){if(entry3.s){act3=entry3.s.a;f3=entry3.s.f;if(Math.random()>f3)return _fold(eq,k+' vs 3bet 4b未中→'+act3+'未中→fold',spr);}else return _fold(eq,k+' vs 3bet 4b'+Math.round(f3*100)+'%未中→fold',spr);}
     var actualBet3=bet||pot*3;

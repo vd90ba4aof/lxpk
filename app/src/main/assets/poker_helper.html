@@ -2436,6 +2436,9 @@ var HandStateMachine=(function(){
 // V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
 // 升级自 V2.9.215
 // 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
+// V2.9.300: StrategyEngine v3 — River价值表 + Turn防禦 + GG人群數據 + 多尺度sizing
+// 升级自 V2.9.215
+// 独立IIFE，不修改旧代码，通过 G._seEnabled 开关切换
 var StrategyEngine=(function(){
 'use strict';
 
@@ -2873,7 +2876,8 @@ function decidePreflop(k){
 
   // 3: 面对3bet
   if(scene==='reraise'){
-    var f3b=_F3B[p5];if(!f3b)return null;var entry3=f3b[k];if(!entry3)return _fold(eq,k+' vs 3bet→fold',spr);
+    var _f3bKey=p5==='MP'?'UTG1':p5;  // V3.31: MP位置用UTG1策略(5人桌早期位置)
+    var f3b=_F3B[_f3bKey];if(!f3b)return null;var entry3=f3b[k];if(!entry3)return _fold(eq,k+' vs 3bet→fold',spr);
     var act3=entry3.a,f3=entry3.f;
     if(act3==='4b'&&Math.random()>f3){if(entry3.s){act3=entry3.s.a;f3=entry3.s.f;if(Math.random()>f3)return _fold(eq,k+' vs 3bet 4b未中→'+act3+'未中→fold',spr);}else return _fold(eq,k+' vs 3bet 4b'+Math.round(f3*100)+'%未中→fold',spr);}
     var actualBet3=bet||pot*3;
@@ -3661,6 +3665,16 @@ return{
 })();
 
 if(typeof global!=="undefined")global.StrategyEngine=StrategyEngine;
+// V3.19: hcKey映射 — 表中缺失的键映射到最接近的
+function _hc2keySafe(hcKey, tableName){
+  if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
+  if(hcKey===12)return 13;  // 弱听牌→接近空气的13
+  if(hcKey===10)return 9;   // 中听牌→9
+  return hcKey;
+}
+
+
+
 // V3.19: hcKey映射 — 表中缺失的键映射到最接近的
 function _hc2keySafe(hcKey, tableName){
   if(tableName==='_CR'&&(hcKey===0||hcKey===4))return null; // 强牌不CR(设计如此)
