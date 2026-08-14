@@ -726,7 +726,9 @@ class FloatingService : Service() {
             if (action == "raise" || action == "raise_big") {
                 val sizing = decisionData.optInt("sizing", 0)
                 val pot = decisionData.optInt("pot", 0)
-                if (sizing > 0 && pot > 0 && GameModeConfig.currentPlatform == GamePlatform.GGPOKER) {
+                val phase = decisionData.optString("phase", "post")
+                // V3.15: 翻前加注用GG滑动条(默认值), 翻后才走四档按钮
+                if (sizing > 0 && pot > 0 && phase != "pre" && GameModeConfig.currentPlatform == GamePlatform.GGPOKER) {
                     val betBtnAction = GameModeConfig.getBetButtonAction(sizing, pot)
                     Log.d(TAG, "★ GG bet sizing: action=$action sizing=$sizing pot=$pot → $betBtnAction")
                     // V3.14: 优先尝试精确金额输入（配置了键盘坐标时）

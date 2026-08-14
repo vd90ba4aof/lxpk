@@ -11796,7 +11796,8 @@ function autoExecuteDecision(r, isAutoMode) {
         eq: r.eq || 0,
         hClass: r.hClass ? r.hClass.name : '?',
         sizing: r.v || 0,
-        pot: G.pot || 0
+        pot: G.pot || 0,
+        phase: G.phase || 'post'
       }));
     }
     return true;
