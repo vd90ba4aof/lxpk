@@ -470,9 +470,11 @@ class CardRecognizer(private val context: Context) {
 
         Log.d(TAG, "V3识别: ${if(isHand)"手牌" else "公共牌"}[$index] $rankDisplay$suitSym rank=$source conf=$finalConfidence suitConf=$suitConf")
 
-        // V3.7: 组合置信度 — suit可靠(0.88-0.92)时拉高整体置信，解锁快速通道
+        // V3.40: 组合置信度 — suit可靠时取max；suit失败但rank来自OCR时+0.05加成
         val combinedConf = if (suit != "?") {
             Math.max(finalConfidence, suitConf).toFloat()
+        } else if (source == "OCR直出" || source == "OCR中置信(maybe)") {
+            (finalConfidence + 0.05f).coerceAtMost(0.95f)  // OCR读出rank是强信号
         } else {
             finalConfidence
         }
@@ -644,7 +646,7 @@ class CardRecognizer(private val context: Context) {
         // 置信度计算
         val confidence = when {
             foundRank != null && foundSuit != null -> 0.90f  // rank+suit 都有
-            foundRank != null -> 0.75f                        // 只有 rank
+            foundRank != null -> 0.82f                        // V3.40: 只有rank也过快速通道门槛(rank是强信号)
             foundSuit != null -> 0.40f                        // 只有 suit
             else -> 0f
         }
