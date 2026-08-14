@@ -397,7 +397,7 @@ function decidePreflop(k){
   var tiltInfo=TiltDetector.detectTilt(profile);
 
   // 1: 开池
-  if(scene==='check'||scene==='call'){
+  if(scene==='check'||scene==='call'||scene==='open'){  // V3.26: 'open'=Straddle局开池场景
     var rfi=_RFI[p5];if(!rfi)return null;var freq=rfi[k];
     var adj=_quantExploitAdjust(freq||0,'raise',profile);freq=adj.freq>freq?adj.freq:(freq||0);
     if(freq===undefined||freq===0){if(oppType==='nit'||oppType==='tight')freq=0.05;else return _fold(eq,'不在'+p5+'RFI范围',spr);}
