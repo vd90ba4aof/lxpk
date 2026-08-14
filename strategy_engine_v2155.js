@@ -574,7 +574,16 @@ function decidePostflop(k){
   }
 
   // ★ V3.12: Donk Bet (对手OOP主动下注)
-  if(!didPFR && scene==='raise' && typeof _donkDecision==='function' && G._facedDonk){
+  // V3.32: 用FrameDiffEngine检测donk（_facedDonk无人设置，死flag）
+  var _isDonk=false;
+  try{
+    if(!didPFR && scene==='raise' && street!=='preflop'){
+      var _fdA=typeof FrameDiffEngine!=='undefined'?FrameDiffEngine.getOppPostflopAction(street):null;
+      // 翻牌圈对手先下注=donk; 或ActionLine记录对手先行动
+      _isDonk = (_fdA&&_fdA==='bet') || G._facedDonk===true;
+    }
+  }catch(e){}
+  if(!didPFR && scene==='raise' && typeof _donkDecision==='function' && _isDonk){
     try{
       var _donkR=_donkDecision(k,hcKey,btKey,ip,pot,oppType,null,_is3betPot,_isMultiway,street);
       if(_donkR&&_donkR.a){return _donkR;}
