@@ -130,7 +130,15 @@ function _bt2key(bt){
   if(c==='paired'||c==='static')return'5';
   if(c==='wet')return bt.hasMonotone?'4':'2';
   if(c==='semi-wet')return bt.hasPaired?'5':'6';
-  return w<=1?'0':'1';
+  if(w<=1)return'0';
+  return '1';
+}
+
+// V3.18: 新表(CBet/DB/River等)只有0/2/3/4/5键 — 把1/6映射到最接近的
+function _bt2keyNewTable(btKey){
+  if(btKey==='1')return'0';  // 中等干→干面表
+  if(btKey==='6')return'2';  // 半湿对子→湿润表(注:'6'实际是semi-wet无paired)
+  return btKey;
 }
 
 function _hc2key(hc){
@@ -238,7 +246,7 @@ function _pickSizing(sizingObj, bTexture, spr){
 }
 
 function _pickRivSizing(handClass, eq, pot, spr){
-  var btKey = _bt2key(bTexture);
+  var btKey = _bt2keyNewTable(_bt2key(bTexture));
   var hcKey = _hc2key(handClass);
   var rv=_RIV_VALUE[btKey]&&_RIV_VALUE[btKey][hcKey];
   if(!rv) return pot*0.45;
@@ -292,7 +300,7 @@ function decideRiverValue(k, spr, eq, oppProfile, bTexture, hClass){
   var didPFR=ActionLine.didPreflopRaise();
   if(!didPFR) return null;
 
-  var btKey=_bt2key(bTexture);
+  var btKey=_bt2keyNewTable(_bt2key(bTexture));
   var hcKey=_hc2key(hClass);
   var rv=_RIV_VALUE[btKey]&&_RIV_VALUE[btKey][hcKey];
   if(!rv) return null;
@@ -322,7 +330,7 @@ function decideTurnDoubleBarrel(k, spr, eq, oppProfile, bTexture, hClass){
 
   var btKey=_bt2key(bTexture);
   var hcKey=_hc2key(hClass);
-  var dbTable=_DB_TURN[btKey];
+  var dbTable=_DB_TURN[_bt2keyNewTable(btKey)];
   if(!dbTable||!dbTable[hcKey]) return null;
 
   var dbFreq=dbTable[hcKey][0];
@@ -540,7 +548,7 @@ function decidePostflop(k){
 
   // ====== CBet ======
   if(didPFR&&scene==='check'&&street!=='river'){
-    var cbTable=ip?_CBET_IP[btKey]:_CBET_OOP[btKey];
+    var cbTable=ip?_CBET_IP[_bt2keyNewTable(btKey)]:_CBET_OOP[_bt2keyNewTable(btKey)];
     if(cbTable&&cbTable[hcKey]){
       var cb=cbTable[hcKey];
       var cbFreq=cb[0];
@@ -562,7 +570,7 @@ function decidePostflop(k){
 
   // ====== Check-Raise ======
   if(!ip&&scene==='raise'&&!didPFR&&street==='flop'){
-    var crTable=_CR[btKey];
+    var crTable=_CR[_bt2keyNewTable(btKey)];
     if(crTable&&crTable[hcKey]){
       var cr=crTable[hcKey];var crFreq=cr[0];var crSzMult=cr[1];
       if(OppProfiler&&OppProfiler.getStat){var oppCB=OppProfiler.getStat('cbetFlop');if(oppCB>.7)crFreq=Math.min(.3,crFreq*1.5);}
