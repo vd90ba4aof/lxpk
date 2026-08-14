@@ -1970,6 +1970,8 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                 val tLocalStart = System.currentTimeMillis()
                 val bmp = android.graphics.BitmapFactory.decodeByteArray(screenshot, 0, screenshot.size)
                 if (bmp != null) {
+                    // V3.41: 用截图真实尺寸更新坐标缩放——GG小窗/分屏时截图≠屏幕尺寸
+                    CardRecognizer.updateScreenSize(bmp.width, bmp.height)
                     val localResult = cardRecognizer!!.recognizeAll(bmp)
                     bmp.recycle()
                     val tLocalEnd = System.currentTimeMillis()
@@ -2024,7 +2026,11 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
             var fastBmp: android.graphics.Bitmap? = null
             val fastLocalResult = try {
                 fastBmp = android.graphics.BitmapFactory.decodeByteArray(screenshot, 0, screenshot.size)
-                if (fastBmp != null) cardRecognizer!!.recognizeAll(fastBmp) else null
+                if (fastBmp != null) {
+                    // V3.41: 同样用截图真实尺寸更新缩放
+                    CardRecognizer.updateScreenSize(fastBmp.width, fastBmp.height)
+                    cardRecognizer!!.recognizeAll(fastBmp)
+                } else null
             } catch (e: Exception) { null }
 
             if (fastLocalResult != null && fastLocalResult.handCards.size == 2
