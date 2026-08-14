@@ -11928,7 +11928,8 @@ function autoExecuteDecision(r, isAutoMode) {
         hClass: r.hClass ? r.hClass.name : '?',
         sizing: r.v || 0,
         pot: G.pot || 0,
-        phase: G.phase || 'post'
+        phase: G.phase || 'post',
+        nash: r._nash ? true : false
       }));
     }
     return true;

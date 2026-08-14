@@ -730,6 +730,14 @@ class FloatingService : Service() {
                 val sizing = decisionData.optInt("sizing", 0)
                 val pot = decisionData.optInt("pot", 0)
                 val phase = decisionData.optString("phase", "post")
+                val isNash = decisionData.optBoolean("nash", false)
+                // V3.25: 纳什push → 直接点全押按钮
+                if (isNash) {
+                    Log.d(TAG, "★ 纳什push: 点全押按钮")
+                    executeAutoTapFallback("allin")
+                    handStartTime = 0; _shotClockRunnable?.let { handler.removeCallbacks(it) }; lastDecisionTime = System.currentTimeMillis()
+                    return
+                }
                 // V3.16: 翻前raise → 直接点GG加注按钮(默认2.5x min-raise)
                 //        翻后raise → 四档按钮(33/50/75/100%)
                 if (phase == "pre") {
