@@ -729,8 +729,17 @@ class FloatingService : Service() {
                 if (sizing > 0 && pot > 0 && GameModeConfig.currentPlatform == GamePlatform.GGPOKER) {
                     val betBtnAction = GameModeConfig.getBetButtonAction(sizing, pot)
                     Log.d(TAG, "★ GG bet sizing: action=$action sizing=$sizing pot=$pot → $betBtnAction")
-                    // 先点击下注预设按钮
-                    executeAutoTapFallback(betBtnAction)
+                    // V3.14: 优先尝试精确金额输入（配置了键盘坐标时）
+                    var exactDone = false
+                    try {
+                        exactDone = executeExactBet(sizing)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "精确输入异常，fallback预设按钮", e)
+                    }
+                    if (!exactDone) {
+                        // 先点击下注预设按钮
+                        executeAutoTapFallback(betBtnAction)
+                    }
                     // 延迟200ms后点击加注按钮确认
                     handler.postDelayed({
                         try {
@@ -783,6 +792,46 @@ class FloatingService : Service() {
             executeAutoTapFallback(action)
         }
     }
+    // V3.14: 精确金额输入 — 点击输入框+逐个点数字键盘 (GG数字键盘坐标需实测)
+    private fun executeExactBet(amount: Int): Boolean {
+        try {
+            val cfg = GameModeConfig.getCoordinateConfig()
+            val inputBox = cfg.betInputBox
+            val numpad = cfg.numpadKeys
+            val confirm = cfg.numpadConfirm
+            if (inputBox.isEmpty() || numpad.isEmpty() || confirm.isEmpty()) {
+                Log.d(TAG, "精确输入未配置坐标，fallback到4档按钮")
+                return false
+            }
+            val (sw, sh) = getScreenSize()
+            val sx = sw.toFloat() / cfg.referenceWidth
+            val sy = sh.toFloat() / cfg.referenceHeight
+            // 1. 点击金额输入框
+            val boxX = ((inputBox[0] + inputBox[2]) / 2 * sx).toInt()
+            val boxY = ((inputBox[1] + inputBox[3]) / 2 * sy).toInt()
+            bleManager?.sendTap(boxX, boxY, 50)
+            Thread.sleep(250) // 等键盘弹出
+            // 2. 逐个点击数字键
+            val digits = amount.toString()
+            for (ch in digits) {
+                val key = numpad[ch.toString()] ?: continue
+                val kx = (key[0] * sx).toInt()
+                val ky = (key[1] * sy).toInt()
+                bleManager?.sendTap(kx, ky, 40)
+                Thread.sleep(60) // 按键间隔
+            }
+            // 3. 点击确认
+            val cx = ((confirm[0] + confirm[2]) / 2 * sx).toInt()
+            val cy = ((confirm[1] + confirm[3]) / 2 * sy).toInt()
+            bleManager?.sendTap(cx, cy, 50)
+            Log.d(TAG, "★ 精确输入完成: $amount")
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "精确输入失败", e)
+            return false
+        }
+    }
+
     // V2.9.200: 回退动态坐标——使用GameModeConfig根据当前平台自动适配
     private fun executeAutoTapFallback(action: String) {
         val (sw, sh) = getScreenSize()

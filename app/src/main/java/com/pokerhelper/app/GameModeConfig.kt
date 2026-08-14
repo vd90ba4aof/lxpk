@@ -49,7 +49,12 @@ data class CoordinateConfig(
     val actionButtons: List<IntArray> = emptyList(),     // 底部操作按钮 [x1,y1,x2,y2]
     val betButtons: List<IntArray> = emptyList(),        // 下注按钮(4档) [x1,y1,x2,y2]
     val dealerSearchAreas: List<IntArray> = emptyList(), // D按钮搜索区域(6个座位附近)
-    val topNavBar: List<IntArray> = emptyList()          // 顶部导航栏按钮
+    val topNavBar: List<IntArray> = emptyList(),          // 顶部导航栏按钮
+    // V3.14: 精确金额输入配置 (空=不支持精确输入, fallback到4档按钮)
+    val betInputBox: IntArray = intArrayOf(),             // 下注金额输入框 [x1,y1,x2,y2]
+    val numpadKeys: Map<String, IntArray> = emptyMap(),   // 数字键盘按键 "0"-"9"→[x,y]
+    val numpadConfirm: IntArray = intArrayOf(),           // 确认/下注按钮 [x1,y1,x2,y2]
+    val numpadBackspace: IntArray = intArrayOf()          // 退格键 [x1,y1,x2,y2]
 )
 
 // Rake配置
