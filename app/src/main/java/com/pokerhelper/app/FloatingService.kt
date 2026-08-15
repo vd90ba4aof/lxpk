@@ -1003,7 +1003,7 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
         }
 
         tvStatus = TextView(this).apply {
-            text = "青云 v2.9.179"
+            text = "青云 v${BuildConfig.VERSION_NAME}"  // V3.44: 动态版本号，不再硬编码
             setTextColor(0xFFe8edf5.toInt())
             textSize = 12f
             setPadding(4, 2, 4, 2)
