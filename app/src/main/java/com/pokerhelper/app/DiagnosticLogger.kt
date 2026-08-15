@@ -21,8 +21,16 @@ object DiagnosticLogger {
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     private val logFileLock = Any()
     
-    // V2.9.182: 日志文件持久化——每次识别自动追加，滚动保留最近5MB
+    // V3.46: 日志文件写内部目录(filesDir) — Android10+公共存储限制导致之前日志全部丢失
+    private var appFilesDir: File? = null
+    fun initLogDir(context: android.content.Context) {
+        appFilesDir = context.filesDir
+    }
+    
     private fun getLogFile(): File {
+        // 优先内部目录（永远可写，无权限问题）
+        appFilesDir?.let { return File(it, "poker_log.txt") }
+        // 兜底：旧公共路径（Android9-可用）
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         return File(downloadsDir, "poker_log.txt")
     }
@@ -56,7 +64,10 @@ object DiagnosticLogger {
                 val timeStr = timeFormat.format(Date())
                 file.appendText("[$timeStr] [JS] $message\n", Charsets.UTF_8)
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            // V3.46: 日志失败也要记录到Logcat，不再静默
+            android.util.Log.e("DiagnosticLogger", "JS日志写入失败: ${e.message}")
+        }
     }
     
     /**

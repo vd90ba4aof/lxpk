@@ -244,6 +244,9 @@ class FloatingService : Service() {
     override fun onCreate() {
         super.onCreate()
         
+        // V3.46: 初始化日志目录（内部存储，解决Android10+公共存储写入失败）
+        DiagnosticLogger.initLogDir(this)
+        
         // V2.9.182: 崩溃保护——兜底写入日志到文件
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
