@@ -1975,8 +1975,22 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
             return
         }
         // V2.9.109: 诊断——截图成功，始终更新通知
-        Log.d(TAG, "截图成功: ${screenshot.size / 1024}KB, apiKey=${if(VisionApiClient.apiKey.isNotEmpty()) "已配置" else "空"}")
-        updateAdviceNotification("2/4 截图OK", "${screenshot.size / 1024}KB, API识别中...")
+        // V3.50: 加分辨率信息（解码后宽×高），一眼看出截图是否被缩放
+        var _resInfo = ""
+        try {
+            val _bmp = android.graphics.BitmapFactory.decodeByteArray(screenshot, 0, screenshot.size)
+            if (_bmp != null) {
+                _resInfo = "${_bmp.width}x${_bmp.height}"
+                ScreenCaptureService.screenshotWidth = _bmp.width
+                ScreenCaptureService.screenshotHeight = _bmp.height
+                _bmp.recycle()
+            }
+        } catch (_: Exception) {}
+        Log.d(TAG, "截图成功: ${screenshot.size / 1024}KB ${_resInfo}, apiKey=${if(VisionApiClient.apiKey.isNotEmpty()) "已配置" else "空"}")
+        updateAdviceNotification("2/4 截图OK", "${screenshot.size / 1024}KB ${_resInfo}")
+        if (_resInfo.isNotEmpty()) {
+            addErrorLog("${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())} 截图: ${_resInfo} ${screenshot.size/1024}KB")
+        }
 
         if (VisionApiClient.apiKey.isEmpty()) {
             executeJs("if(typeof onActionCapture==='function'){onActionCapture()};document.body.classList.add('speed-mode');document.body.classList.remove('api-processing')")
