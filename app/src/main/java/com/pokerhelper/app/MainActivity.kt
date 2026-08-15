@@ -136,14 +136,14 @@ class MainActivity : AppCompatActivity() {
 
             updateUI()
 
-            val providers = arrayOf("openai", "dashscope", "deepseek", "siliconflow")
-            val providerNames = arrayOf("OpenAI (GPT-4o-mini)", "通义千问VL", "DeepSeek", "硅基流动(Qwen3-VL)")
+            val providers = arrayOf("siliconflow")  // V3.48: 只用硅基流动
+            val providerNames = arrayOf("硅基流动(Qwen3-VL)")
             val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, providerNames)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerProvider.adapter = adapter
 
-            val savedProvider = prefs?.getString(KEY_PROVIDER, "dashscope") ?: "dashscope"
-            val savedKey = prefs?.getString(KEY_APIKEY, "sk-392a0016c35c4e788670d8b05bd741a6") ?: "sk-392a0016c35c4e788670d8b05bd741a6"
+            val savedProvider = prefs?.getString(KEY_PROVIDER, "siliconflow") ?: "siliconflow"
+            val savedKey = prefs?.getString(KEY_APIKEY, "sk-xon…kndf") ?: "sk-xon…kndf"
             val providerIndex = providers.indexOf(savedProvider).coerceAtLeast(0)
             spinnerProvider.setSelection(providerIndex)
             if (savedKey.isNotEmpty()) {

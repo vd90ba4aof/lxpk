@@ -35,10 +35,10 @@ object VisionApiClient {
     // V2.9.108: prompt格式开关——true=单行紧凑(快), false=原格式(稳)
     var useCompactPrompt = true
     
-    var apiProvider = "openai"
+    var apiProvider = "siliconflow"  // V3.48: 默认硅基流动
     var apiKey = ""
-    var apiUrl = "https://api.openai.com/v1/chat/completions"
-    var modelName = "gpt-4o-mini"
+    var apiUrl = "https://api.siliconflow.cn/v1/chat/completions"
+    var modelName = "Qwen/Qwen3-VL-8B-Instruct"  // V3.48: 硅基流动默认模型
     var lastError = ""
     // V2.9.193: 保存API原始响应——用于诊断识别失败根因
     var lastRawResponse = ""
