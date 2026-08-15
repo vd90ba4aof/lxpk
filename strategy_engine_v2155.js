@@ -1339,7 +1339,7 @@ function _get3bAlt(k,table,action){return 0.3;}
 return{
   decidePreflop:decidePreflop,
   decidePostflop:decidePostflop,
-  isEnabled:function(){return G._seEnabled!==false&&G.tt<=5;},
+  isEnabled:function(){return G._seEnabled!==false&&G.tt<=6;},
   getVersion:function(){return'2.9.300';},
   getRFI:function(pos){return _RFI[pos]||null;},
   get3B:function(vs,from){return _3B[vs]?_3B[vs][from]:null;},
