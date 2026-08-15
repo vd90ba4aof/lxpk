@@ -686,12 +686,28 @@ class FloatingService : Service() {
         handler.postDelayed(r,jittered)
     }
     private fun autoCaptureTrigger() {
-        if(!ScreenOptService.isServiceRunning()){autoConsecutiveErrors++;checkAutoErrors();scheduleNextAutoCapture();return}
+        if(!ScreenOptService.isServiceRunning()){
+            autoConsecutiveErrors++
+            // V3.45: 自动截屏失败也记录日志+悬浮球提示（之前静默重试，用户看不到原因）
+            if (autoConsecutiveErrors % 5 == 0) {
+                addErrorLog("${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())} 自动截屏失败×${autoConsecutiveErrors}: 无障碍服务未运行")
+                updateBallAdvice("COLOR:FOLD|SIGNAL:COUNTER|REASON:无障碍未开")
+                updateAdviceNotification("⚠️ 无障碍未运行", "连续${autoConsecutiveErrors}次截屏失败，请检查无障碍权限")
+            }
+            checkAutoErrors();scheduleNextAutoCapture();return
+        }
         isVisionInProgress=true
         hideOverlay()  // V2.9.190: 截屏前隐藏悬浮层
         ScreenOptService.onScreenshotReady={s->handler.post{
             showOverlay()  // V2.9.190: 截屏后恢复悬浮层
-            if(s)processScreenshotAndAnalyze(isAutoCapture=true)else{isVisionInProgress=false;autoConsecutiveErrors++;checkAutoErrors();scheduleNextAutoCapture()}
+            if(s)processScreenshotAndAnalyze(isAutoCapture=true)else{
+                isVisionInProgress=false;autoConsecutiveErrors++
+                // V3.45: 截屏失败也记录
+                if (autoConsecutiveErrors % 5 == 0) {
+                    addErrorLog("${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())} 自动截屏回调失败×${autoConsecutiveErrors}: ${ScreenCaptureService.lastError}")
+                }
+                checkAutoErrors();scheduleNextAutoCapture()
+            }
         }}
         handler.postDelayed({ScreenOptService.captureScreen()}, 100)  // V2.9.192: 延迟100ms等View渲染
     }
