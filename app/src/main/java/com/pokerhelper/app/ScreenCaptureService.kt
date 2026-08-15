@@ -14,6 +14,8 @@ class ScreenCaptureService : android.app.Service() {
     companion object {
         var isRunning = false
         var latestScreenshot: ByteArray? = null
+        var screenshotWidth: Int = 0   // V3.42: 实际截图宽度（可能≠屏幕物理分辨率）
+        var screenshotHeight: Int = 0  // V3.42: 实际截图高度
             internal set
         var captureCount: Int = 0
             internal set

@@ -113,6 +113,9 @@ class ScreenOptService : AccessibilityService() {
                             // ScreenshotResult没有close()方法，不需要关闭
 
                             if (softwareBitmap != null) {
+                                // V3.42: 记录截图实际尺寸供坐标缩放使用
+                                ScreenCaptureService.screenshotWidth = softwareBitmap.width
+                                ScreenCaptureService.screenshotHeight = softwareBitmap.height
                                 // 4. 压缩为JPEG
                                 val stream = ByteArrayOutputStream()
                                 softwareBitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream)

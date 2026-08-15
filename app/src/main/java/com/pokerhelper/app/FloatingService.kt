@@ -854,7 +854,10 @@ class FloatingService : Service() {
 
     // V2.9.200: 回退动态坐标——使用GameModeConfig根据当前平台自动适配
     private fun executeAutoTapFallback(action: String) {
-        val (sw, sh) = getScreenSize()
+        // V3.42: 优先用截图真实尺寸（Android 15显示缩放时截图≠屏幕尺寸）
+        val rawSw = ScreenCaptureService.screenshotWidth
+        val rawSh = ScreenCaptureService.screenshotHeight
+        val (sw, sh) = if (rawSw > 0 && rawSh > 0) Pair(rawSw, rawSh) else getScreenSize()
         val (x, y) = GameModeConfig.getAutoTapFallback(action, sw, sh)
         Log.d(TAG, "★ autoTapFallback: $action → ($x, $y) [screen=${sw}x${sh} platform=${GameModeConfig.currentPlatform}]")
         bleManager?.sendTap(x, y, 50)
