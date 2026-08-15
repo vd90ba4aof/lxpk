@@ -8177,6 +8177,13 @@ function _decideInner(){
   var cc=G.comm.filter(function(c){return c;}).length;
   // V2.9.155: StrategyEngine路由——GTO表优先,旧引擎回退
   var result;
+  // V3.47: 新引擎状态日志——一次性输出到console，方便诊断
+  if(typeof StrategyEngine!=="undefined"){
+    if(!window.__seLogged){
+      window.__seLogged=true;
+      console.log('[SE] StrategyEngine v'+StrategyEngine.getVersion()+' 加载完成 | isEnabled='+StrategyEngine.isEnabled()+' (tt='+G.tt+')');
+    }
+  }
   if(typeof StrategyEngine!=="undefined"&&StrategyEngine.isEnabled()){
     var _seR=cc>0?StrategyEngine.decidePostflop(k):StrategyEngine.decidePreflop(k);
     if(_seR){result=_seR;console.log("[SE] GTO决策: "+_seR.a+" "+(_seR._seFreq?Math.round(_seR._seFreq*100)+"%":""));}

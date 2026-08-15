@@ -1265,7 +1265,7 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                     }
                 }
                 // V2.9.114: 验证策略引擎是否真的加载了
-                view?.evaluateJavascript("if(typeof onVisionResult==='function'){console.log('[V2.9.125] ✅策略引擎就绪')}else{console.log('[V2.9.125] ❌策略引擎未加载！')}", null)
+                view?.evaluateJavascript("if(typeof onVisionResult==='function'){console.log('[SE] ✅策略引擎就绪 v'+ (typeof StrategyEngine!=='undefined'?StrategyEngine.getVersion():'unknown'))}else{console.log('[SE] ❌策略引擎未加载！')}", null)
             }
         }
         wv.webChromeClient = object : WebChromeClient() {
