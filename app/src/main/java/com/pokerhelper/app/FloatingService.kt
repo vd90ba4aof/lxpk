@@ -2453,6 +2453,10 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                         executeJs("(function(){try{if(typeof onVisionResult==='function'){onVisionResult($taggedJson);if(typeof AndroidBridge!=='undefined'&&AndroidBridge.confirmVisionReceived){AndroidBridge.confirmVisionReceived()}}else{console.log('[V2.9.125] onVisionResult不存在,尝试重载HTML');if(typeof AndroidBridge!=='undefined'&&AndroidBridge.showAdvice){AndroidBridge.showAdvice('COLOR:FOLD|SIGNAL:ERROR|REASON:策略引擎未加载');}setTimeout(function(){location.reload();},1000);}}catch(e){console.log('[V2.9.125] onVisionResult异常:'+e.message);if(typeof AndroidBridge!=='undefined'&&AndroidBridge.showAdvice){AndroidBridge.showAdvice('COLOR:FOLD|SIGNAL:ERROR|REASON:JS异常:'+e.message.substring(0,30));}}})()")
                         tvAction?.alpha = 1.0f
                         Log.d(TAG, "★ onVisionResult已调用")
+                        // V3.43: 关键修复 — API结果已发给JS，无论JS是否回调都重置isVisionInProgress
+                        // (之前依赖JS的autoCaptureVisionComplete回调,但HTML只在verify帧调它→普通帧永远卡死)
+                        isVisionInProgress = false
+                        autoConsecutiveErrors = 0
                         // V2.9.70: 正常识别→停止闪烁
                         isBlinkingError = false
                         updateAutoCaptureInterval(result.street)  // V2.9.183: 自适应截屏间隔
@@ -2495,6 +2499,11 @@ if(s2){isVisionInProgress=false;processScreenshotAndAnalyze(isMultiFrame2=true)}
                     } // V2.9.111: end of NO_TABLE else (正常牌桌才执行策略)
                 } else {
                     handler.post {
+                        // V3.43: API失败也重置isVisionInProgress（防卡死）
+                        isVisionInProgress = false
+                        autoConsecutiveErrors++
+                        checkAutoErrors()
+                        scheduleNextAutoCapture()
                         tvAction?.alpha = 1.0f
                         tvStatus?.text = "❌ API: ${VisionApiClient.lastError.take(30)}"
                         executeJs("document.body.classList.remove('api-processing')")
